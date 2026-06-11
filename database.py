@@ -1,10 +1,16 @@
 import pandas as pd
 import numpy as np
-from sqlalchemy import create_engine, text
 import os
 import datetime
 import streamlit as st
 from config import DB_CONN_STR_SPC, DB_CONN_STR_JERARQUIA, DB_CONN_STR_FASESUAT, CLOUD_MODE
+
+# SQLAlchemy y pyodbc solo se necesitan localmente para conectar a SQL Server
+if not CLOUD_MODE:
+    try:
+        from sqlalchemy import create_engine, text
+    except ImportError:
+        pass
 
 DATA_DIR = "data"
 CONSUMO_PATH = os.path.join(DATA_DIR, "consumo.parquet")
