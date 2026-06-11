@@ -25,6 +25,9 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 
+# Modo cloud: True cuando se ejecuta en Streamlit Cloud (sin acceso a SQL Server)
+CLOUD_MODE = os.getenv("CLOUD_MODE", "false").lower() == "true"
+
 # Negocio
 TICKET_VIGENCIA_DIAS = int(os.getenv("TICKET_VIGENCIA_DIAS", 100))
 RIESGO_CRITICO_SEMANAS = float(os.getenv("RIESGO_CRITICO_SEMANAS", 1.0))

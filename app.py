@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from database import cargar_datos, recargar_base_datos
+from config import CLOUD_MODE
 from data_processing import procesar_datos
 from components.kpis import render_kpis
 from components.charts import render_charts
@@ -46,12 +47,13 @@ st.markdown("""
 
 st.title("Gestión Contratistas")
 
-col1, col2 = st.columns([4, 1])
-with col2:
-    if st.button("🔄 Actualizar Base de Datos"):
-        with st.spinner("Descargando datos desde SQL Server..."):
-            recargar_base_datos(use_mock=False)
-            st.rerun()
+if not CLOUD_MODE:
+    col1, col2 = st.columns([4, 1])
+    with col2:
+        if st.button("🔄 Actualizar Base de Datos"):
+            with st.spinner("Descargando datos desde SQL Server..."):
+                recargar_base_datos(use_mock=False)
+                st.rerun()
 
 # 1. Cargar datos
 df_consumo, df_jerarquia, df_servicios = cargar_datos()

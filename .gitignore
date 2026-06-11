@@ -1,0 +1,26 @@
+# Credenciales locales — NUNCA subir a GitHub
+.env
+.env.local
+
+# Secretos de Streamlit Cloud (se configuran en la UI, no en el repo)
+.streamlit/secrets.toml
+
+# Logs locales
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Los archivos parquet en data/ SÍ se suben a GitHub (son la fuente de datos del cloud)
+# data/*.parquet  <-- NO ignorar

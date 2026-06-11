@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, text
 import os
 import datetime
 import streamlit as st
-from config import DB_CONN_STR_SPC, DB_CONN_STR_JERARQUIA, DB_CONN_STR_FASESUAT
+from config import DB_CONN_STR_SPC, DB_CONN_STR_JERARQUIA, DB_CONN_STR_FASESUAT, CLOUD_MODE
 
 DATA_DIR = "data"
 CONSUMO_PATH = os.path.join(DATA_DIR, "consumo.parquet")
@@ -234,6 +234,8 @@ def recargar_clientes():
 def cargar_clientes():
     """Carga el listado de contratistas desde caché local. Si no existe, lo descarga."""
     if not os.path.exists(CLIENTES_PATH):
+        if CLOUD_MODE:
+            return pd.DataFrame()
         return recargar_clientes()
     try:
         return pd.read_parquet(CLIENTES_PATH)
@@ -287,6 +289,8 @@ def recargar_precios():
 def cargar_precios():
     """Carga el catálogo de precios desde caché local. Si no existe, intenta descargarlo."""
     if not os.path.exists(PRECIOS_PATH):
+        if CLOUD_MODE:
+            return pd.DataFrame()
         return recargar_precios()
     try:
         return pd.read_parquet(PRECIOS_PATH)
@@ -297,10 +301,18 @@ def cargar_precios():
 
 def cargar_datos():
     """
-    Carga los datos desde el repositorio local.
-    Si no existen, ejecuta una recarga inicial.
+    Carga los datos desde el repositorio local (parquet).
+    En CLOUD_MODE nunca intenta conectar a SQL Server.
     """
-    if not (os.path.exists(CONSUMO_PATH) and os.path.exists(JERARQUIA_PATH) and os.path.exists(SERVICIOS_PATH)):
+    parquet_ok = (
+        os.path.exists(CONSUMO_PATH) and
+        os.path.exists(JERARQUIA_PATH) and
+        os.path.exists(SERVICIOS_PATH)
+    )
+    if not parquet_ok:
+        if CLOUD_MODE:
+            st.error("Los archivos de datos no están disponibles. Ejecuta update_data.py localmente y vuelve a hacer push.")
+            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
         print("No se encontró caché local. Iniciando carga inicial...")
         recargar_base_datos(use_mock=False)
         
