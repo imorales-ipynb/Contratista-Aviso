@@ -1,0 +1,90 @@
+[
+  {
+    "id": "20260611_115614_ACMANET_TRANSPORTADO",
+    "fecha_emision": "2026-06-11",
+    "vigencia": "2026-06-16",
+    "casino": "ACMANET TRANSPORTADO",
+    "cliente": "IKSO SPA",
+    "rut": "76993859-1",
+    "condicion_pago": "Anticipado",
+    "n_servicios": 2,
+    "total_neto": 293086.0,
+    "iva": 55686.0,
+    "total": 348772.0,
+    "archivo": "data\\cotizaciones\\20260611_115614_ACMANET_TRANSPORTADO.xlsx",
+    "items": [
+      {
+        "NombreServicio": "DESAYUNO CONTRATISTA",
+        "TipoServicio": "NINGUNO",
+        "Alias": "DESAYUNO CONTRATISTA",
+        "Precio": 3253.0,
+        "Cantidad": 88,
+        "Subtotal": 286264.0
+      },
+      {
+        "NombreServicio": "ALMUERZO CONTRATISTAS",
+        "TipoServicio": "NINGUNO",
+        "Alias": "ALMUERZO CONTRATISTAS",
+        "Precio": 6822.0,
+        "Cantidad": 1,
+        "Subtotal": 6822.0
+      }
+    ]
+  },
+  {
+    "id": "20260611_123409_ACMA",
+    "fecha_emision": "2026-06-11",
+    "vigencia": "2026-06-16",
+    "casino": "ACMA",
+    "cliente": "A & E MONTAJE INDUSTRIAL SPA",
+    "rut": "76519026-6",
+    "condicion_pago": "Anticipado",
+    "n_servicios": 1,
+    "total_neto": 249928.0,
+    "iva": 47486.0,
+    "total": 297414.0,
+    "archivo": "data\\cotizaciones\\20260611_123409_ACMA.xlsx",
+    "items": [
+      {
+        "NombreServicio": "ALMUERZO CONTRATISTAS",
+        "TipoServicio": "NINGUNO",
+        "Alias": "ALMUERZO CONTRATISTAS",
+        "Precio": 4463.0,
+        "Cantidad": 56,
+        "Subtotal": 249928.0
+      }
+    ]
+  },
+  {
+    "id": "20260611_124636_A_ENCUADERNADORES_(_",
+    "fecha_emision": "2026-06-11",
+    "vigencia": "2026-06-16",
+    "casino": "A ENCUADERNADORES ( ENCUADERNACION)",
+    "cliente": "AF SOLUTIONS SPA",
+    "rut": "77743689-9",
+    "condicion_pago": "Anticipado",
+    "n_servicios": 2,
+    "total_neto": 575232.0,
+    "iva": 109294.0,
+    "total": 684526.0,
+    "archivo": "data\\cotizaciones\\20260611_124636_A_ENCUADERNADORES_(_.xlsx",
+    "items": [
+      {
+        "NombreServicio": "ALMUERZO CONTRATISTAS",
+        "TipoServicio": "NINGUNO",
+        "Alias": "ALMUERZO CONTRATISTAS",
+        "Precio": 5136.0,
+        "Cantidad": 85,
+        "Subtotal": 436560.0
+      },
+      {
+        "NombreServicio": "CENA",
+        "TipoServicio": "NINGUNO",
+        "Alias": "CENA",
+        "Precio": 2889.0,
+        "Cantidad": 48,
+        "Subtotal": 138672.0
+      }
+    ]
+  }
+]
