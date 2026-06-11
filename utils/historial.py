@@ -11,11 +11,8 @@ def _asegurar_dirs():
     os.makedirs(COTIZACIONES_DIR, exist_ok=True)
 
 
-def guardar_cotizacion(df_cot, casino, fecha, vigencia, cliente, rut, condicion_pago, excel_bytes):
-    """
-    Guarda la cotización en el historial JSON y el archivo Excel en disco.
-    Retorna el ID generado.
-    """
+def guardar_cotizacion(df_cot, casino, fecha, vigencia, cliente, rut,
+                       condicion_pago, excel_bytes, pdf_bytes=None):
     _asegurar_dirs()
 
     ts  = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -26,8 +23,15 @@ def guardar_cotizacion(df_cot, casino, fecha, vigencia, cliente, rut, condicion_
     with open(excel_path, "wb") as f:
         f.write(excel_bytes)
 
-    # Construir registro
-    items = df_cot[["NombreServicio", "TipoServicio", "Alias", "Precio", "Cantidad", "Subtotal"]].to_dict("records")
+    # Guardar PDF (si se proporcionó)
+    pdf_path = None
+    if pdf_bytes:
+        pdf_path = os.path.join(COTIZACIONES_DIR, f"{cid}.pdf")
+        with open(pdf_path, "wb") as f:
+            f.write(pdf_bytes)
+
+    items = df_cot[["NombreServicio", "TipoServicio", "Alias",
+                    "Precio", "Cantidad", "Subtotal"]].to_dict("records")
 
     registro = {
         "id":             cid,
@@ -42,10 +46,10 @@ def guardar_cotizacion(df_cot, casino, fecha, vigencia, cliente, rut, condicion_
         "iva":            round(float(df_cot["Subtotal"].sum() * 0.19), 0),
         "total":          round(float(df_cot["Subtotal"].sum() * 1.19), 0),
         "archivo":        excel_path,
+        "archivo_pdf":    pdf_path,
         "items":          items,
     }
 
-    # Leer historial existente y agregar
     historial = _leer_json()
     historial.append(registro)
 
@@ -56,12 +60,10 @@ def guardar_cotizacion(df_cot, casino, fecha, vigencia, cliente, rut, condicion_
 
 
 def cargar_historial() -> list:
-    """Devuelve la lista de cotizaciones guardadas, de más reciente a más antigua."""
     return list(reversed(_leer_json()))
 
 
-def cargar_excel_cotizacion(cid: str) -> bytes | None:
-    """Lee el archivo Excel de una cotización por su ID. Retorna None si no existe."""
+def cargar_excel_cotizacion(cid: str):
     path = os.path.join(COTIZACIONES_DIR, f"{cid}.xlsx")
     if not os.path.exists(path):
         return None
@@ -69,16 +71,24 @@ def cargar_excel_cotizacion(cid: str) -> bytes | None:
         return f.read()
 
 
+def cargar_pdf_cotizacion(cid: str):
+    path = os.path.join(COTIZACIONES_DIR, f"{cid}.pdf")
+    if not os.path.exists(path):
+        return None
+    with open(path, "rb") as f:
+        return f.read()
+
+
 def eliminar_cotizacion(cid: str):
-    """Elimina una cotización del historial y su archivo Excel."""
     historial = _leer_json()
     historial = [r for r in historial if r["id"] != cid]
     with open(HISTORIAL_PATH, "w", encoding="utf-8") as f:
         json.dump(historial, f, ensure_ascii=False, indent=2)
 
-    path = os.path.join(COTIZACIONES_DIR, f"{cid}.xlsx")
-    if os.path.exists(path):
-        os.remove(path)
+    for ext in (".xlsx", ".pdf"):
+        path = os.path.join(COTIZACIONES_DIR, f"{cid}{ext}")
+        if os.path.exists(path):
+            os.remove(path)
 
 
 def _leer_json() -> list:

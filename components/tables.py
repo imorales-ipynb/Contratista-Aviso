@@ -2,9 +2,6 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-_fragment = getattr(st, "fragment", getattr(st, "experimental_fragment", lambda f: f))
-
-
 def to_excel(df):
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -12,7 +9,6 @@ def to_excel(df):
     return output.getvalue()
 
 
-@_fragment
 def render_tables(resumen_df):
     if resumen_df.empty:
         return

@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
-from utils.historial import cargar_historial, cargar_excel_cotizacion, eliminar_cotizacion
+from utils.historial import (cargar_historial, cargar_excel_cotizacion,
+                              cargar_pdf_cotizacion, eliminar_cotizacion)
 
 st.set_page_config(
     page_title="Historial de Cotizaciones",
@@ -18,25 +19,21 @@ if not historial:
 
 # ── Tabla resumen ─────────────────────────────────────────────────────────────
 df_hist = pd.DataFrame([{
-    "Fecha Emisión":  r["fecha_emision"],
-    "Vigencia":       r["vigencia"],
-    "Casino":         r["casino"],
-    "Cliente":        r["cliente"],
-    "RUT":            r["rut"],
-    "Cond. Pago":     r["condicion_pago"],
-    "N° Servicios":   r["n_servicios"],
-    "Total Neto":     f"${r['total_neto']:,.0f}",
-    "IVA":            f"${r['iva']:,.0f}",
-    "Total":          f"${r['total']:,.0f}",
-    "_id":            r["id"],
+    "Fecha Emisión": r["fecha_emision"],
+    "Vigencia":      r["vigencia"],
+    "Casino":        r["casino"],
+    "Cliente":       r["cliente"],
+    "RUT":           r["rut"],
+    "Cond. Pago":    r["condicion_pago"],
+    "N° Servicios":  r["n_servicios"],
+    "Total Neto":    f"${r['total_neto']:,.0f}",
+    "IVA":           f"${r['iva']:,.0f}",
+    "Total":         f"${r['total']:,.0f}",
+    "_id":           r["id"],
 } for r in historial])
 
 st.markdown(f"**{len(df_hist)} cotización(es) registrada(s)**")
-st.dataframe(
-    df_hist.drop(columns=["_id"]),
-    use_container_width=True,
-    hide_index=True
-)
+st.dataframe(df_hist.drop(columns=["_id"]), use_container_width=True, hide_index=True)
 
 # ── Detalle y descarga ────────────────────────────────────────────────────────
 st.markdown("---")
@@ -50,7 +47,7 @@ opciones = {
 seleccion = st.selectbox("Seleccionar cotización:", options=list(opciones.keys()))
 
 if seleccion:
-    cid     = opciones[seleccion]
+    cid      = opciones[seleccion]
     registro = next(r for r in historial if r["id"] == cid)
 
     col_info, col_acciones = st.columns([3, 1])
@@ -66,7 +63,6 @@ if seleccion:
                     f"**IVA:** ${registro['iva']:,.0f}  &nbsp;|&nbsp;  "
                     f"**Total:** ${registro['total']:,.0f}")
 
-        # Detalle de ítems
         if registro.get("items"):
             df_items = pd.DataFrame(registro["items"])
             df_items["Precio"]   = df_items["Precio"].apply(lambda x: f"${x:,.0f}")
@@ -74,7 +70,6 @@ if seleccion:
             st.dataframe(df_items, use_container_width=True, hide_index=True)
 
     with col_acciones:
-        # Descargar Excel guardado
         excel_bytes = cargar_excel_cotizacion(cid)
         if excel_bytes:
             st.download_button(
@@ -85,9 +80,19 @@ if seleccion:
                 use_container_width=True,
             )
         else:
-            st.warning("Archivo Excel no disponible.")
+            st.warning("Excel no disponible.")
 
-        # Eliminar del historial
+        pdf_bytes = cargar_pdf_cotizacion(cid)
+        if pdf_bytes:
+            st.download_button(
+                label="📄 Descargar PDF",
+                data=pdf_bytes,
+                file_name=f"Cotizacion_{cid}.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+            )
+
+        st.markdown("---")
         if st.button("🗑️ Eliminar", use_container_width=True, key="btn_eliminar"):
             st.session_state["_confirmar_eliminar"] = cid
 

@@ -22,5 +22,9 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Los archivos parquet en data/ SÍ se suben a GitHub (son la fuente de datos del cloud)
+# Datos del dashboard: los parquet SÍ se suben (fuente de datos del cloud)
 # data/*.parquet  <-- NO ignorar
+
+# Historial y archivos de cotizaciones: son datos locales, NO subir
+data/historial_cotizaciones.json
+data/cotizaciones/
