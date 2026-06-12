@@ -164,7 +164,7 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut,
     )
     ws.merge_cells(f"E{h}:G{h+len(transferencia)}")
     c = ws.cell(row=h, column=5, value=texto_vigencia)
-    c.font      = Font(name="Calibri", size=9, color=NARANJA)
+    c.font      = Font(name="Calibri", size=12, color=NARANJA)
     c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
     c.border    = B
 
@@ -187,7 +187,7 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut,
 
     for j, inst in enumerate([
         "Pago mediante transferencia electrónica 24 horas hábiles de anticipación.",
-        "Pago mediante Webpay 48 horas hábiles de anticipación.",
+        "Pago mediante GetNet 48 horas hábiles de anticipación.",
         "Se solicita programar sus pagos para evitar suspensión de los servicios.",
     ], 1):
         ws.merge_cells(f"E{h+j}:G{h+j}")
