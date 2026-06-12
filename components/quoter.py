@@ -230,12 +230,16 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
     pdf.ln(5)
 
     # ── Info cliente / documento ──────────────────────────────────────────────
+    def _tv(txt, n=30):
+        txt = str(txt or "-")
+        return txt[:n] + "..." if len(txt) > n else txt
+
     info_rows = [
-        ("N Cotizacion:", numero or "-",        "Emision:",       fecha.strftime("%d/%m/%Y")),
-        ("Cliente:",      cliente or "-",       "Vigencia:",      vigencia.strftime("%d/%m/%Y")),
-        ("RUT:",          rut or "-",           "Cond. Pago:",    condicion_pago),
-        ("Casino:",       casino,               "Operador:",      operador or "-"),
-        ("Gte. Servicio:",gerente_servicio or "-","Jefe Servicio:", jefe_servicio or "-"),
+        ("N Cotizacion:", _tv(numero, 20),          "Emision:",        fecha.strftime("%d/%m/%Y")),
+        ("Cliente:",      _tv(cliente, 30),         "Vigencia:",       vigencia.strftime("%d/%m/%Y")),
+        ("RUT:",          _tv(rut, 20),             "Cond. Pago:",     _tv(condicion_pago, 20)),
+        ("Casino:",       _tv(casino, 28),          "Operador:",       _tv(operador, 22)),
+        ("Gte. Servicio:",_tv(gerente_servicio, 28),"Jefe Servicio:",  _tv(jefe_servicio, 28)),
     ]
     L, V = 26, 64
     H_ROW = 7
@@ -324,10 +328,10 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
         pdf.set_xy(xL, y1 + i * 5.5); pdf.cell(cw, 5.5, linea, border=1)
 
     pdf.set_text_color(*NARANJA); pdf.set_font("Helvetica", "", 8)
-    instrucciones = ["Para recibir servicios, pague con anticipacion:",
-                     "- Transferencia: 24 hrs habiles.",
-                     "- Getnet: 48 hrs habiles.",
-                     "- Programe pagos para evitar suspension.", ""]
+    instrucciones = ["Para recibir servicios, pague con anticipación:",
+                     "- Transferencia: 24 hrs hábiles.",
+                     "- Getnet: 48 hrs hábiles.",
+                     "- Programe pagos para evitar suspensión.", ""]
     for i, inst in enumerate(instrucciones):
         pdf.set_xy(xR, y1 + i * 5.5); pdf.cell(cw, 5.5, inst, border=1)
 
