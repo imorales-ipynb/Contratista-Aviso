@@ -46,7 +46,7 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut,
     NARANJA = "C55A11"
     B       = _borde_fino()
 
-    anchos = [5, 30, 18, 20, 14, 16, 10, 14]
+    anchos = [5, 40, 22, 16, 18, 10, 16]
     for i, a in enumerate(anchos, 1):
         ws.column_dimensions[get_column_letter(i)].width = a
 
@@ -62,7 +62,7 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut,
         ws.merge_cells("A1:C1")
 
     titulo = f"COTIZACIÓN DE SERVICIOS   {numero}" if numero else "COTIZACIÓN DE SERVICIOS"
-    ws.merge_cells("D1:H1")
+    ws.merge_cells("D1:G1")
     _celda(ws, 1, 4, titulo, bold=True, size=14, color_font=AZUL, alineacion="center")
 
     # ── Filas 2-5: Info cliente / documento ──────────────────────────────────
@@ -74,7 +74,7 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut,
     ]
     for i, (l1, v1, l2, v2) in enumerate(info_doc, start=2):
         ws.merge_cells(f"A{i}:B{i}"); ws.merge_cells(f"C{i}:D{i}")
-        ws.merge_cells(f"E{i}:F{i}"); ws.merge_cells(f"G{i}:H{i}")
+        ws.merge_cells(f"E{i}:F{i}")
         _celda(ws, i, 1, f"{l1}  {v1}", bold=(i==2), size=10,
                color_font=AZUL if i==2 else "000000")
         _celda(ws, i, 3, "")
@@ -85,8 +85,8 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut,
     ws.row_dimensions[6].height = 6
 
     # ── Tabla servicios ───────────────────────────────────────────────────────
-    HEADERS    = ["N°", "Servicio", "Tipo Servicio", "Alias",
-                  "Cód. Servicio", "Precio Unitario", "Cantidad", "Subtotal"]
+    HEADERS    = ["N°", "Servicio", "Alias", "Cód. Servicio",
+                  "Precio Unitario", "Cantidad", "Subtotal"]
     HEADER_ROW = 7
     for ci, h in enumerate(HEADERS, 1):
         _celda(ws, HEADER_ROW, ci, h, bold=True, size=10, color_font="FFFFFF",
@@ -98,12 +98,12 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut,
     for idx, (_, row) in enumerate(df_cot.iterrows(), 1):
         r      = data_start + idx - 1
         bg_row = GRIS_F if idx % 2 == 0 else None
-        vals   = [idx, row.get("NombreServicio",""), row.get("TipoServicio",""),
-                  row.get("Alias",""), row.get("Codigo Servicio",""),
-                  row.get("Precio",0), row.get("Cantidad",0), row.get("Subtotal",0)]
+        vals   = [idx, row.get("NombreServicio",""), row.get("Alias",""),
+                  row.get("Codigo Servicio",""), row.get("Precio",0),
+                  row.get("Cantidad",0), row.get("Subtotal",0)]
         for ci, val in enumerate(vals, 1):
-            alin = "right" if ci in (6,8) else ("center" if ci in (1,7) else "left")
-            fmt  = fmt_pesos if ci in (6,8) else None
+            alin = "right" if ci in (5,7) else ("center" if ci in (1,6) else "left")
+            fmt  = fmt_pesos if ci in (5,7) else None
             _celda(ws, r, ci, val, size=10, bg=bg_row, alineacion=alin,
                    numero_fmt=fmt, borde=B)
         ws.row_dimensions[r].height = 16
@@ -115,12 +115,12 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut,
     tr            = data_start + len(df_cot)
 
     def _fila_total(fila, etiqueta, valor, dest=False):
-        ws.merge_cells(f"A{fila}:G{fila}")
+        ws.merge_cells(f"A{fila}:F{fila}")
         _celda(ws, fila, 1, etiqueta, bold=dest, size=11,
                color_font=AZUL if dest else "000000",
                bg=AZUL_CL if dest else "EBF3FB",
                alineacion="right", borde=B)
-        _celda(ws, fila, 8, valor, bold=dest, size=11,
+        _celda(ws, fila, 7, valor, bold=dest, size=11,
                color_font=AZUL if dest else "000000",
                bg=AZUL_CL if dest else "EBF3FB",
                alineacion="right", numero_fmt=fmt_pesos, borde=B)
@@ -150,7 +150,7 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut,
         "emisión. Art. 41 Ley 19496. El prestador no efectuará devolución de dinero por "
         "no uso, salvo que el servicio no esté disponible en los días y horas en que se presta."
     )
-    ws.merge_cells(f"E{h}:H{h+len(transferencia)}")
+    ws.merge_cells(f"E{h}:G{h+len(transferencia)}")
     c = ws.cell(row=h, column=5, value=texto_vigencia)
     c.font      = Font(name="Calibri", size=9, color=NARANJA)
     c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
@@ -166,7 +166,7 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut,
     c.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
     c.border    = B
 
-    ws.merge_cells(f"E{h}:H{h}")
+    ws.merge_cells(f"E{h}:G{h}")
     _celda(ws, h, 5,
            "Estimado cliente, para recibir nuestros servicios debe realizar el pago con anticipación:",
            bold=True, size=9, color_font="FFFFFF", bg=GRIS_H,
@@ -178,7 +178,7 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut,
         "Pago mediante Webpay 48 horas hábiles de anticipación.",
         "Se solicita programar sus pagos para evitar suspensión de los servicios.",
     ], 1):
-        ws.merge_cells(f"E{h+j}:H{h+j}")
+        ws.merge_cells(f"E{h+j}:G{h+j}")
         _celda(ws, h+j, 5, inst, size=9, color_font=NARANJA, borde=B)
         ws.row_dimensions[h+j].height = 14
 
@@ -236,9 +236,9 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
     pdf.ln(4)
 
     # ── Encabezado tabla ──────────────────────────────────────────────────────
-    HEADERS = ["N", "Servicio", "Tipo", "Alias", "Codigo", "Precio Unit.", "Cant.", "Subtotal"]
-    COL_W   = [8, 50, 22, 22, 18, 22, 12, 26]
-    ALIGNS  = ["C", "L", "L", "L", "C", "R", "C", "R"]
+    HEADERS = ["N", "Servicio", "Alias", "Codigo", "Precio Unit.", "Cant.", "Subtotal"]
+    COL_W   = [8, 62, 25, 18, 25, 12, 30]
+    ALIGNS  = ["C", "L", "L", "C", "R", "C", "R"]
 
     pdf.set_fill_color(*AZUL); pdf.set_text_color(255, 255, 255)
     pdf.set_font("Helvetica", "B", 9)
@@ -255,9 +255,9 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
         pdf.set_fill_color(*(GRIS_F if fill else (255, 255, 255)))
         pdf.set_text_color(0, 0, 0); pdf.set_font("Helvetica", "", 9)
         nombre = str(row.get("NombreServicio", ""))
-        if len(nombre) > 30: nombre = nombre[:27] + "..."
-        vals = [str(idx), nombre, str(row.get("TipoServicio",""))[:18],
-                str(row.get("Alias",""))[:18], str(row.get("Codigo Servicio","")),
+        if len(nombre) > 42: nombre = nombre[:39] + "..."
+        vals = [str(idx), nombre, str(row.get("Alias",""))[:20],
+                str(row.get("Codigo Servicio","")),
                 f"${float(row.get('Precio',0)):,.0f}",
                 str(int(row.get("Cantidad",0))), f"${subtotal:,.0f}"]
         for val, w, a in zip(vals, COL_W, ALIGNS):
@@ -485,13 +485,13 @@ def render_cotizador(df_precios, df_clientes=None):
         df_preview,
         column_config={
             "NombreServicio":  st.column_config.TextColumn("Servicio",      disabled=True, width="large"),
-            "TipoServicio":    st.column_config.TextColumn("Tipo",          disabled=True),
             "Alias":           st.column_config.TextColumn("Alias",         disabled=True),
             "Codigo Servicio": st.column_config.TextColumn("Código",        disabled=True),
             "Precio":          st.column_config.NumberColumn("Precio Unit.", disabled=True, format="$%d"),
             "Cantidad":        st.column_config.NumberColumn("Cantidad",    min_value=1, step=1, format="%d"),
             "Eliminar":        st.column_config.CheckboxColumn("🗑️"),
         },
+        column_order=["NombreServicio", "Alias", "Codigo Servicio", "Precio", "Cantidad", "Eliminar"],
         hide_index=True,
         use_container_width=True,
         key=f"cot_tabla_{casino_sel}_{len(st.session_state.cot_items)}",
@@ -521,10 +521,16 @@ def render_cotizador(df_precios, df_clientes=None):
     df_cot = df_editado.drop(columns=["Eliminar"]).copy()
     df_cot["Subtotal"] = df_cot["Cantidad"] * df_cot["Precio"]
 
-    col_k1, col_k2, col_k3 = st.columns(3)
-    with col_k1: st.metric("Servicios", len(df_cot))
+    neto_ui  = df_cot["Subtotal"].sum()
+    iva_ui   = neto_ui * 0.19
+    total_ui = neto_ui + iva_ui
+
+    col_k1, col_k2, col_k3, col_k4, col_k5 = st.columns(5)
+    with col_k1: st.metric("Servicios",       len(df_cot))
     with col_k2: st.metric("Tickets totales", f"{int(df_cot['Cantidad'].sum()):,}")
-    with col_k3: st.metric("Total Cotización", f"${df_cot['Subtotal'].sum():,.0f}")
+    with col_k3: st.metric("Total Neto",      f"${neto_ui:,.0f}")
+    with col_k4: st.metric("IVA (19%)",       f"${iva_ui:,.0f}")
+    with col_k5: st.metric("Total c/ IVA",    f"${total_ui:,.0f}")
 
     # ── Detectar cambios para invalidar cotización ya creada ──────────────────
     estado = f"{casino_sel}|{cliente_val}|{rut_auto}|{condicion}|" \
