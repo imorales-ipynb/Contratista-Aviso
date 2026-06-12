@@ -308,17 +308,26 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
     _total("Total Neto", neto)
     _total("IVA (19%)", iva)
     _total("TOTAL", total, dest=True)
-    pdf.ln(5)
 
-    # ── Pie ───────────────────────────────────────────────────────────────────
-    y0 = pdf.get_y(); xL = pdf.l_margin; xR = xL + 93; cw = 87
+    # ── Pie al fondo de la página (posicionado absolutamente) ─────────────────
+    pdf.set_auto_page_break(False)
+    xL = pdf.l_margin; xR = xL + 93; cw = 87
 
+    # Vigencia: 3 líneas × 7mm = 21mm + margen inferior 15mm → y = 297-15-21 = 261
+    VIG_H   = 21
+    PIE_H   = 7 + 6 * 5.5   # header + 6 filas transferencia
+    GAP     = 4
+    pie_y   = 297 - 15 - VIG_H - GAP - PIE_H   # ≈ 214
+
+    # Datos de Transferencia + Instrucciones
+    pdf.set_xy(xL, pie_y)
+    y0 = pie_y
     pdf.set_fill_color(*GRIS_H); pdf.set_text_color(255, 255, 255)
     pdf.set_font("Helvetica", "B", 9)
     pdf.set_xy(xL, y0); pdf.cell(cw, 7, "Datos de Transferencia", border=1, ln=0, fill=True)
-    pdf.set_xy(xR, y0); pdf.cell(cw, 7, "Instrucciones de Pago",  border=1, ln=1, fill=True)
+    pdf.set_xy(xR, y0); pdf.cell(cw, 7, "Instrucciones de Pago",  border=1, ln=0, fill=True)
 
-    y1 = pdf.get_y()
+    y1 = y0 + 7
     transferencia = ["Banco: Chile", "Cuenta Corriente: 167-01052-02",
                      "Rut: 78.793.360-2", "Casino Express S.A",
                      f"Mail: {EMAIL_EMPRESA}",
@@ -327,19 +336,18 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
     for i, linea in enumerate(transferencia):
         pdf.set_xy(xL, y1 + i * 5.5); pdf.cell(cw, 5.5, linea, border=1)
 
-    pdf.set_text_color(*NARANJA); pdf.set_font("Helvetica", "", 8)
     instrucciones = ["Para recibir servicios, pague con anticipación:",
                      "- Transferencia: 24 hrs hábiles.",
                      "- Getnet: 48 hrs hábiles.",
-                     "- Programe pagos para evitar suspensión.", ""]
+                     "- Programe pagos para evitar suspensión.", "", ""]
+    pdf.set_text_color(*NARANJA); pdf.set_font("Helvetica", "", 8)
     for i, inst in enumerate(instrucciones):
         pdf.set_xy(xR, y1 + i * 5.5); pdf.cell(cw, 5.5, inst, border=1)
 
-    # ── Aviso vigencia al final de la página ──────────────────────────────────
-    pdf.set_auto_page_break(False)
-    pdf.set_y(-28)
-    pdf.set_fill_color(*NARANJA)
-    pdf.set_text_color(255, 255, 255)
+    # Vigencia al fondo
+    vig_y = 297 - 15 - VIG_H
+    pdf.set_xy(xL, vig_y)
+    pdf.set_fill_color(*NARANJA); pdf.set_text_color(255, 255, 255)
     pdf.set_font("Helvetica", "B", 10)
     pdf.multi_cell(W, 7,
         "IMPORTANTE: Los tickets comprados tienen una vigencia de 100 dias a contar de la fecha "
