@@ -11,7 +11,7 @@ from fpdf import FPDF
 EMAIL_EMPRESA    = "venta.ticket@casinoexpress.cl"
 CONDICIONES_PAGO = ["Anticipado", "Tarjeta de Crédito", "Tarjeta de Débito",
                     "Crédito 30 días", "Crédito 60 días"]
-LOGO_PATH        = os.path.join("assets", "logo.png")
+LOGO_PATH        = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "logo.png")
 
 
 # ── Helpers Excel ─────────────────────────────────────────────────────────────
