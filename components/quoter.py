@@ -9,8 +9,10 @@ from openpyxl.utils import get_column_letter
 from fpdf import FPDF
 
 EMAIL_EMPRESA    = "venta.ticket@casinoexpress.cl"
+TELEFONOS        = "+569 42367538 / +569 69192409"
 CONDICIONES_PAGO = ["Anticipado", "Tarjeta de Crédito", "Tarjeta de Débito",
                     "Crédito 30 días", "Crédito 60 días"]
+OPERADORES       = ["Fabián Flores", "Héctor Astudillo", "Wilson Prado", "Werner Marti"]
 LOGO_PATH        = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "logo.png")
 
 
@@ -34,7 +36,8 @@ def _borde_fino():
 # ── Excel ─────────────────────────────────────────────────────────────────────
 
 def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut,
-                    condicion_pago, numero=""):
+                    condicion_pago, numero="", operador="",
+                    gerente_servicio="", jefe_servicio=""):
     wb = Workbook()
     ws = wb.active
     ws.title = "Cotización"
@@ -65,29 +68,37 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut,
     ws.merge_cells("D1:G1")
     _celda(ws, 1, 4, titulo, bold=True, size=14, color_font=AZUL, alineacion="center")
 
-    # ── Filas 2-5: Info cliente / documento ──────────────────────────────────
+    # ── Filas 2-7: Info cliente / documento ──────────────────────────────────
+    contacto = f"{EMAIL_EMPRESA}   |   Tel: {TELEFONOS}"
     info_doc = [
-        ("N° Cotización:", numero,               "Emisión:",    fecha.strftime("%d/%m/%Y")),
-        ("Cliente:",       cliente,               "Vigencia:",   vigencia.strftime("%d/%m/%Y")),
-        ("RUT:",           rut,                   "Cond. Pago:", condicion_pago),
-        ("Casino:",        casino,                "Email:",      EMAIL_EMPRESA),
+        ("N° Cotizacion:", numero,          "Emision:",        fecha.strftime("%d/%m/%Y")),
+        ("Cliente:",       cliente,         "Vigencia:",       vigencia.strftime("%d/%m/%Y")),
+        ("RUT:",           rut,             "Cond. Pago:",     condicion_pago),
+        ("Casino:",        casino,          "Operador:",       operador),
+        ("Gte. Servicio:", gerente_servicio,"Jefe Servicio:",  jefe_servicio),
+        ("Email / Tel:",   contacto,        "",                ""),
     ]
     for i, (l1, v1, l2, v2) in enumerate(info_doc, start=2):
-        ws.merge_cells(f"A{i}:B{i}"); ws.merge_cells(f"C{i}:D{i}")
-        ws.merge_cells(f"E{i}:F{i}")
-        _celda(ws, i, 1, f"{l1}  {v1}", bold=(i==2), size=10,
-               color_font=AZUL if i==2 else "000000")
-        _celda(ws, i, 3, "")
-        _celda(ws, i, 5, f"{l2}  {v2}", bold=(l2 != ""), size=10)
-        _celda(ws, i, 7, "")
-        ws.row_dimensions[i].height = 15
+        last = (i == 7)
+        if last:
+            ws.merge_cells(f"A{i}:G{i}")
+            _celda(ws, i, 1, f"{l1}  {v1}", size=9, color_font="595959")
+        else:
+            ws.merge_cells(f"A{i}:B{i}"); ws.merge_cells(f"C{i}:D{i}")
+            ws.merge_cells(f"E{i}:F{i}")
+            _celda(ws, i, 1, f"{l1}  {v1}", bold=(i==2), size=10,
+                   color_font=AZUL if i==2 else "000000")
+            _celda(ws, i, 3, "")
+            _celda(ws, i, 5, f"{l2}  {v2}", bold=(l2 != ""), size=10)
+            _celda(ws, i, 7, "")
+        ws.row_dimensions[i].height = 16
 
-    ws.row_dimensions[6].height = 6
+    ws.row_dimensions[8].height = 6
 
     # ── Tabla servicios ───────────────────────────────────────────────────────
     HEADERS    = ["N°", "Servicio", "Alias", "Cód. Servicio",
                   "Precio Unitario", "Cantidad", "Subtotal"]
-    HEADER_ROW = 7
+    HEADER_ROW = 9
     for ci, h in enumerate(HEADERS, 1):
         _celda(ws, HEADER_ROW, ci, h, bold=True, size=10, color_font="FFFFFF",
                bg=AZUL, alineacion="center", borde=B)
@@ -139,7 +150,8 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut,
 
     transferencia = ["Banco: Chile", "Cuenta Corriente: 167-01052-02",
                      "Rut: 78.793.360-2", "Casino Express S.A",
-                     f"Mail: {EMAIL_EMPRESA}"]
+                     f"Mail: {EMAIL_EMPRESA}",
+                     f"Tel: {TELEFONOS}"]
     for i, linea in enumerate(transferencia, 1):
         ws.merge_cells(f"A{h+i}:D{h+i}")
         _celda(ws, h+i, 1, linea, size=9, borde=B)
@@ -190,7 +202,8 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut,
 # ── PDF ───────────────────────────────────────────────────────────────────────
 
 def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
-                  condicion_pago, numero=""):
+                  condicion_pago, numero="", operador="",
+                  gerente_servicio="", jefe_servicio=""):
     pdf = FPDF(orientation="P", unit="mm", format="A4")
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
@@ -206,7 +219,7 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
     # ── Logo + Título ─────────────────────────────────────────────────────────
     if os.path.exists(LOGO_PATH):
         pdf.image(LOGO_PATH, x=15, y=8, w=52)
-        pdf.set_y(30)
+        pdf.set_y(40)
     else:
         pdf.set_y(15)
 
@@ -214,26 +227,35 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
     pdf.set_font("Helvetica", "B", 15)
     pdf.set_text_color(*AZUL)
     pdf.cell(W, 10, titulo, border=0, ln=1, align="C")
-    pdf.ln(3)
+    pdf.ln(5)
 
     # ── Info cliente / documento ──────────────────────────────────────────────
     info_rows = [
-        ("N Cotizacion:", numero or "-",   "Emision:",    fecha.strftime("%d/%m/%Y")),
-        ("Cliente:",      cliente or "-",  "Vigencia:",   vigencia.strftime("%d/%m/%Y")),
-        ("RUT:",          rut or "-",      "Cond. Pago:", condicion_pago),
-        ("Casino:",       casino,          "Email:",      EMAIL_EMPRESA),
+        ("N Cotizacion:", numero or "-",        "Emision:",       fecha.strftime("%d/%m/%Y")),
+        ("Cliente:",      cliente or "-",       "Vigencia:",      vigencia.strftime("%d/%m/%Y")),
+        ("RUT:",          rut or "-",           "Cond. Pago:",    condicion_pago),
+        ("Casino:",       casino,               "Operador:",      operador or "-"),
+        ("Gte. Servicio:",gerente_servicio or "-","Jefe Servicio:", jefe_servicio or "-"),
     ]
-    L, V = 24, 66
+    L, V = 26, 64
+    H_ROW = 7
     for l1, v1, l2, v2 in info_rows:
         pdf.set_font("Helvetica", "B", 9); pdf.set_text_color(0, 0, 0)
-        pdf.cell(L, 6, l1, ln=0)
+        pdf.cell(L, H_ROW, l1, ln=0)
         pdf.set_font("Helvetica", "", 9)
-        pdf.cell(V, 6, v1, ln=0)
+        pdf.cell(V, H_ROW, v1, ln=0)
         pdf.set_font("Helvetica", "B", 9)
-        pdf.cell(L, 6, l2, ln=0)
+        pdf.cell(L, H_ROW, l2, ln=0)
         pdf.set_font("Helvetica", "", 9)
-        pdf.cell(V, 6, v2, ln=1)
-    pdf.ln(4)
+        pdf.cell(V, H_ROW, v2, ln=1)
+        pdf.ln(1)
+
+    # Fila contacto completa
+    pdf.set_font("Helvetica", "B", 9); pdf.set_text_color(0, 0, 0)
+    pdf.cell(L, H_ROW, "Email / Tel:", ln=0)
+    pdf.set_font("Helvetica", "", 8); pdf.set_text_color(89, 89, 89)
+    pdf.cell(W - L, H_ROW, f"{EMAIL_EMPRESA}   |   Tel: {TELEFONOS}", ln=1)
+    pdf.ln(5)
 
     # ── Encabezado tabla ──────────────────────────────────────────────────────
     HEADERS = ["N", "Servicio", "Alias", "Codigo", "Precio Unit.", "Cant.", "Subtotal"]
@@ -295,7 +317,8 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
     y1 = pdf.get_y()
     transferencia = ["Banco: Chile", "Cuenta Corriente: 167-01052-02",
                      "Rut: 78.793.360-2", "Casino Express S.A",
-                     f"Mail: {EMAIL_EMPRESA}"]
+                     f"Mail: {EMAIL_EMPRESA}",
+                     f"Tel: {TELEFONOS}"]
     pdf.set_text_color(0, 0, 0); pdf.set_font("Helvetica", "", 8)
     for i, linea in enumerate(transferencia):
         pdf.set_xy(xL, y1 + i * 5.5); pdf.cell(cw, 5.5, linea, border=1)
@@ -320,7 +343,20 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
 
 # ── UI Cotizador ──────────────────────────────────────────────────────────────
 
-def render_cotizador(df_precios, df_clientes=None):
+def _buscar_jerarquia(df_jerarquia, casino_sel):
+    """Devuelve (gerente, jefe) para el casino dado."""
+    if df_jerarquia is None or df_jerarquia.empty:
+        return "", ""
+    fila = df_jerarquia[
+        df_jerarquia["Casino"].str.strip().str.lower() == casino_sel.strip().lower()
+    ]
+    if fila.empty:
+        return "", ""
+    row = fila.iloc[0]
+    return str(row.get("GOP", "") or ""), str(row.get("JOP", "") or "")
+
+
+def render_cotizador(df_precios, df_clientes=None, df_jerarquia=None):
     st.title("Cotizador de Servicios")
 
     if "cot_items" not in st.session_state:
@@ -359,6 +395,17 @@ def render_cotizador(df_precios, df_clientes=None):
         for k in ("cot_cliente_sel", "cot_rut_sel", "cot_nombre_manual",
                   "cot_rut_manual", "cot_creada", "cot_estado_hash"):
             st.session_state.pop(k, None)
+
+    # ── Operador + Jerarquía ──────────────────────────────────────────────────
+    gerente, jefe = _buscar_jerarquia(df_jerarquia, casino_sel)
+
+    col_op, col_gte, col_jefe = st.columns(3)
+    with col_op:
+        operador = st.selectbox("Operador:", options=OPERADORES, key="cot_operador")
+    with col_gte:
+        st.text_input("Gerente de Servicio:", value=gerente, disabled=True, key="cot_gerente")
+    with col_jefe:
+        st.text_input("Jefe de Servicio:", value=jefe, disabled=True, key="cot_jefe")
 
     # ── Datos del Cliente ─────────────────────────────────────────────────────
     st.markdown("#### Datos del Cliente")
@@ -551,7 +598,9 @@ def render_cotizador(df_precios, df_clientes=None):
 
             export_args = dict(df_cot=df_cot, casino=casino_sel, fecha=hoy,
                                vigencia=vigencia_fecha, cliente=cliente_val,
-                               rut=rut_auto, condicion_pago=condicion, numero=numero)
+                               rut=rut_auto, condicion_pago=condicion, numero=numero,
+                               operador=operador, gerente_servicio=gerente,
+                               jefe_servicio=jefe)
 
             with st.spinner("Generando documentos..."):
                 excel_data = _exportar_excel(**export_args)

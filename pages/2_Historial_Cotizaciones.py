@@ -91,6 +91,9 @@ if seleccion:
         st.markdown(f"**Emisión:** {registro['fecha_emision']}  &nbsp;|&nbsp;  "
                     f"**Vigencia:** {registro['vigencia']}  &nbsp;|&nbsp;  "
                     f"**Cond. Pago:** {registro['condicion_pago']}")
+        st.markdown(f"**Operador:** {registro.get('operador') or '—'}  &nbsp;|&nbsp;  "
+                    f"**Gte. Servicio:** {registro.get('gerente_servicio') or '—'}  &nbsp;|&nbsp;  "
+                    f"**Jefe Servicio:** {registro.get('jefe_servicio') or '—'}")
         st.markdown(f"**Total Neto:** ${registro['total_neto']:,.0f}  &nbsp;|&nbsp;  "
                     f"**IVA:** ${registro['iva']:,.0f}  &nbsp;|&nbsp;  "
                     f"**Total:** ${registro['total']:,.0f}")

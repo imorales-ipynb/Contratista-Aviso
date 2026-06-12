@@ -1,5 +1,5 @@
 import streamlit as st
-from database import cargar_precios, cargar_clientes
+from database import cargar_precios, cargar_clientes, cargar_datos
 from components.quoter import render_cotizador
 
 st.set_page_config(
@@ -11,4 +11,10 @@ st.set_page_config(
 df_precios  = cargar_precios()
 df_clientes = cargar_clientes()
 
-render_cotizador(df_precios, df_clientes)
+# Jerarquía para Gerente/Jefe de Servicio
+try:
+    _, df_jerarquia, _ = cargar_datos()
+except Exception:
+    df_jerarquia = None
+
+render_cotizador(df_precios, df_clientes, df_jerarquia)

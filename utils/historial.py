@@ -29,7 +29,8 @@ def formato_numero(n: int, year: int) -> str:
 # ── CRUD ──────────────────────────────────────────────────────────────────────
 
 def guardar_cotizacion(df_cot, casino, fecha, vigencia, cliente, rut,
-                       condicion_pago, excel_bytes, pdf_bytes=None, numero=""):
+                       condicion_pago, excel_bytes, pdf_bytes=None, numero="",
+                       operador="", gerente_servicio="", jefe_servicio=""):
     _asegurar_dirs()
 
     ts  = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -65,8 +66,11 @@ def guardar_cotizacion(df_cot, casino, fecha, vigencia, cliente, rut,
         "casino":         casino,
         "cliente":        cliente,
         "rut":            rut,
-        "condicion_pago": condicion_pago,
-        "n_servicios":    len(df_cot),
+        "condicion_pago":    condicion_pago,
+        "operador":          operador,
+        "gerente_servicio":  gerente_servicio,
+        "jefe_servicio":     jefe_servicio,
+        "n_servicios":       len(df_cot),
         "total_neto":     round(float(df_cot["Subtotal"].sum()), 0),
         "iva":            round(float(df_cot["Subtotal"].sum() * 0.19), 0),
         "total":          round(float(df_cot["Subtotal"].sum() * 1.19), 0),
