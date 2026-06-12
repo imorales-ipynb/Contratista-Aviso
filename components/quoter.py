@@ -258,9 +258,9 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
     pdf.ln(5)
 
     # ── Encabezado tabla ──────────────────────────────────────────────────────
-    HEADERS = ["N", "Servicio", "Alias", "Codigo", "Precio Unit.", "Cant.", "Subtotal"]
-    COL_W   = [8, 62, 25, 18, 25, 12, 30]
-    ALIGNS  = ["C", "L", "L", "C", "R", "C", "R"]
+    HEADERS = ["N", "Servicio", "Codigo", "Precio Unit.", "Cant.", "Subtotal"]
+    COL_W   = [8, 80, 22, 28, 14, 28]
+    ALIGNS  = ["C", "L", "C", "R", "C", "R"]
 
     pdf.set_fill_color(*AZUL); pdf.set_text_color(255, 255, 255)
     pdf.set_font("Helvetica", "B", 9)
@@ -277,8 +277,8 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
         pdf.set_fill_color(*(GRIS_F if fill else (255, 255, 255)))
         pdf.set_text_color(0, 0, 0); pdf.set_font("Helvetica", "", 9)
         nombre = str(row.get("NombreServicio", ""))
-        if len(nombre) > 42: nombre = nombre[:39] + "..."
-        vals = [str(idx), nombre, str(row.get("Alias",""))[:20],
+        if len(nombre) > 55: nombre = nombre[:52] + "..."
+        vals = [str(idx), nombre,
                 str(row.get("Codigo Servicio","")),
                 f"${float(row.get('Precio',0)):,.0f}",
                 str(int(row.get("Cantidad",0))), f"${subtotal:,.0f}"]
@@ -326,17 +326,22 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
     pdf.set_text_color(*NARANJA); pdf.set_font("Helvetica", "", 8)
     instrucciones = ["Para recibir servicios, pague con anticipacion:",
                      "- Transferencia: 24 hrs habiles.",
-                     "- Webpay: 48 hrs habiles.",
+                     "- Getnet: 48 hrs habiles.",
                      "- Programe pagos para evitar suspension.", ""]
     for i, inst in enumerate(instrucciones):
         pdf.set_xy(xR, y1 + i * 5.5); pdf.cell(cw, 5.5, inst, border=1)
 
-    pdf.set_y(y1 + len(transferencia) * 5.5 + 3)
-    pdf.set_text_color(*NARANJA); pdf.set_font("Helvetica", "I", 8)
-    pdf.multi_cell(W, 4.5,
-        "Los tickets comprados tienen una vigencia de 100 dias a contar de la fecha de emision. "
-        "Art. 41 Ley 19496. El prestador no efectuara devolucion de dinero por no uso, "
-        "salvo que el servicio no este disponible.", border=1, align="L")
+    # ── Aviso vigencia al final de la página ──────────────────────────────────
+    pdf.set_auto_page_break(False)
+    pdf.set_y(-28)
+    pdf.set_fill_color(*NARANJA)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.multi_cell(W, 7,
+        "IMPORTANTE: Los tickets comprados tienen una vigencia de 100 dias a contar de la fecha "
+        "de emision. Art. 41 Ley 19496. El prestador no efectuara devolucion de dinero por no "
+        "uso, salvo que el servicio no este disponible en los dias y horas en que se presta.",
+        border=0, align="L", fill=True)
 
     return bytes(pdf.output())
 
