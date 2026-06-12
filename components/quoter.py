@@ -605,10 +605,47 @@ def render_cotizador(df_precios, df_clientes=None, df_jerarquia=None):
 
     st.markdown("---")
 
+    # ── Validaciones ─────────────────────────────────────────────────────────
+    import re as _re
+    errores = []
+
+    if df_cot.empty:
+        errores.append("Agrega al menos un servicio antes de crear la cotización.")
+
+    if not df_cot.empty:
+        invalidos = df_cot[df_cot["Cantidad"].fillna(0) <= 0]["NombreServicio"].tolist()
+        if invalidos:
+            errores.append(f"Cantidad inválida (0 o negativa) en: {', '.join(invalidos)}.")
+
+        precios_cero = df_cot[df_cot["Precio"].fillna(0) <= 0]["NombreServicio"].tolist()
+        if precios_cero:
+            errores.append(f"Precio $0 en: {', '.join(precios_cero)}. Verifica que los precios estén cargados.")
+
+        if neto_ui <= 0:
+            errores.append("El total neto es $0. Revisa precios y cantidades.")
+
+    if not cliente_val.strip():
+        errores.append("Debes seleccionar o ingresar el nombre del cliente.")
+
+    if not rut_auto.strip():
+        errores.append("El RUT del cliente es obligatorio.")
+    elif manual:
+        rut_clean = rut_auto.strip().replace(".", "").replace(" ", "")
+        if not _re.match(r'^\d{6,8}-[\dkK]$', rut_clean):
+            errores.append("El RUT no tiene formato válido (ej: 12.345.678-9).")
+
+    if manual and not cliente_val.strip() and rut_auto.strip():
+        errores.append("Ingresaste RUT pero falta el nombre del cliente.")
+
+    for e in errores:
+        st.error(e)
+
     # ── Flujo: Crear → Descargar ──────────────────────────────────────────────
     if not st.session_state.get("cot_creada", False):
-        st.info("Revisa los datos y presiona **Crear Cotización** para registrarla y habilitar la descarga.")
-        if st.button("✅ Crear Cotización", type="primary", use_container_width=True, key="cot_crear"):
+        if not errores:
+            st.info("Revisa los datos y presiona **Crear Cotización** para registrarla y habilitar la descarga.")
+        if st.button("✅ Crear Cotización", type="primary", use_container_width=True,
+                     key="cot_crear", disabled=bool(errores)):
             from utils.historial import guardar_cotizacion, _siguiente_numero, formato_numero
             n      = _siguiente_numero()
             numero = formato_numero(n, hoy.year)
