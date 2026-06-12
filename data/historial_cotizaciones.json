@@ -86,5 +86,30 @@
         "Subtotal": 138672.0
       }
     ]
+  },
+  {
+    "id": "20260611_163524_A_ENCUADERNADORES_(_",
+    "fecha_emision": "2026-06-11",
+    "vigencia": "2026-06-18",
+    "casino": "A ENCUADERNADORES ( ENCUADERNACION)",
+    "cliente": "",
+    "rut": "",
+    "condicion_pago": "Anticipado",
+    "n_servicios": 1,
+    "total_neto": 5136.0,
+    "iva": 976.0,
+    "total": 6112.0,
+    "archivo": "data\\cotizaciones\\20260611_163524_A_ENCUADERNADORES_(_.xlsx",
+    "archivo_pdf": "data\\cotizaciones\\20260611_163524_A_ENCUADERNADORES_(_.pdf",
+    "items": [
+      {
+        "NombreServicio": "ALMUERZO CONTRATISTAS",
+        "TipoServicio": "NINGUNO",
+        "Alias": "ALMUERZO CONTRATISTAS",
+        "Precio": 5136.0,
+        "Cantidad": 1,
+        "Subtotal": 5136.0
+      }
+    ]
   }
 ]

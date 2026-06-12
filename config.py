@@ -28,6 +28,13 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 # Modo cloud: True cuando se ejecuta en Streamlit Cloud (sin acceso a SQL Server)
 CLOUD_MODE = os.getenv("CLOUD_MODE", "false").lower() == "true"
 
+# Rutas del historial de cotizaciones
+# Para apuntar a OneDrive/carpeta local, configura en .env:
+#   HISTORIAL_JSON=C:\Users\ivan.morales\OneDrive\Cotizaciones\historial.json
+#   HISTORIAL_DIR=C:\Users\ivan.morales\OneDrive\Cotizaciones\archivos
+HISTORIAL_JSON = os.getenv("HISTORIAL_JSON", os.path.join("data", "historial_cotizaciones.json"))
+HISTORIAL_DIR  = os.getenv("HISTORIAL_DIR",  os.path.join("data", "cotizaciones"))
+
 # Negocio
 TICKET_VIGENCIA_DIAS = int(os.getenv("TICKET_VIGENCIA_DIAS", 100))
 RIESGO_CRITICO_SEMANAS = float(os.getenv("RIESGO_CRITICO_SEMANAS", 1.0))

@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 import datetime
@@ -7,23 +8,22 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from fpdf import FPDF
 
-# ── Constantes empresa ────────────────────────────────────────────────────────
 EMAIL_EMPRESA    = "venta.ticket@casinoexpress.cl"
 CONDICIONES_PAGO = ["Anticipado", "Tarjeta de Crédito", "Tarjeta de Débito",
                     "Crédito 30 días", "Crédito 60 días"]
+LOGO_PATH        = os.path.join("assets", "logo.png")
+
 
 # ── Helpers Excel ─────────────────────────────────────────────────────────────
+
 def _celda(ws, fila, col, valor="", bold=False, size=10, color_font="000000",
            bg=None, alineacion="left", wrap=False, numero_fmt=None, borde=None):
     c = ws.cell(row=fila, column=col, value=valor)
-    c.font = Font(name="Calibri", bold=bold, size=size, color=color_font)
+    c.font      = Font(name="Calibri", bold=bold, size=size, color=color_font)
     c.alignment = Alignment(horizontal=alineacion, vertical="center", wrap_text=wrap)
-    if bg:
-        c.fill = PatternFill(fill_type="solid", fgColor=bg)
-    if numero_fmt:
-        c.number_format = numero_fmt
-    if borde:
-        c.border = borde
+    if bg:        c.fill   = PatternFill(fill_type="solid", fgColor=bg)
+    if numero_fmt: c.number_format = numero_fmt
+    if borde:     c.border = borde
     return c
 
 def _borde_fino():
@@ -31,7 +31,10 @@ def _borde_fino():
     return Border(left=s, right=s, top=s, bottom=s)
 
 
-def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut, condicion_pago):
+# ── Excel ─────────────────────────────────────────────────────────────────────
+
+def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut,
+                    condicion_pago, numero=""):
     wb = Workbook()
     ws = wb.active
     ws.title = "Cotización"
@@ -47,22 +50,33 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut, condicion_pag
     for i, a in enumerate(anchos, 1):
         ws.column_dimensions[get_column_letter(i)].width = a
 
-    ws.merge_cells("A1:H1")
-    _celda(ws, 1, 1, "COTIZACIÓN DE SERVICIOS", bold=True, size=16,
-           color_font=AZUL, alineacion="center")
-    ws.row_dimensions[1].height = 34
+    # ── Fila 1: Logo + Título ─────────────────────────────────────────────────
+    ws.row_dimensions[1].height = 55
 
+    if os.path.exists(LOGO_PATH):
+        from openpyxl.drawing.image import Image as XlImage
+        logo        = XlImage(LOGO_PATH)
+        logo.width  = 155
+        logo.height = 52
+        ws.add_image(logo, "A1")
+        ws.merge_cells("A1:C1")
+
+    titulo = f"COTIZACIÓN DE SERVICIOS   {numero}" if numero else "COTIZACIÓN DE SERVICIOS"
+    ws.merge_cells("D1:H1")
+    _celda(ws, 1, 4, titulo, bold=True, size=14, color_font=AZUL, alineacion="center")
+
+    # ── Filas 2-5: Info cliente / documento ──────────────────────────────────
     info_doc = [
-        ("Cliente:",        cliente,                "Emisión:",     fecha.strftime("%d/%m/%Y")),
-        ("RUT:",            rut,                    "Vigencia:",    vigencia.strftime("%d/%m/%Y")),
-        ("Casino:",         casino,                 "Cond. Pago:",  condicion_pago),
-        ("Email contacto:", EMAIL_EMPRESA,          "",             ""),
+        ("N° Cotización:", numero,               "Emisión:",    fecha.strftime("%d/%m/%Y")),
+        ("Cliente:",       cliente,               "Vigencia:",   vigencia.strftime("%d/%m/%Y")),
+        ("RUT:",           rut,                   "Cond. Pago:", condicion_pago),
+        ("Casino:",        casino,                "Email:",      EMAIL_EMPRESA),
     ]
     for i, (l1, v1, l2, v2) in enumerate(info_doc, start=2):
         ws.merge_cells(f"A{i}:B{i}"); ws.merge_cells(f"C{i}:D{i}")
         ws.merge_cells(f"E{i}:F{i}"); ws.merge_cells(f"G{i}:H{i}")
-        _celda(ws, i, 1, f"{l1}  {v1}", bold=(i == 2), size=10,
-               color_font=AZUL if i == 2 else "000000")
+        _celda(ws, i, 1, f"{l1}  {v1}", bold=(i==2), size=10,
+               color_font=AZUL if i==2 else "000000")
         _celda(ws, i, 3, "")
         _celda(ws, i, 5, f"{l2}  {v2}", bold=(l2 != ""), size=10)
         _celda(ws, i, 7, "")
@@ -70,8 +84,9 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut, condicion_pag
 
     ws.row_dimensions[6].height = 6
 
-    HEADERS   = ["N°", "Servicio", "Tipo Servicio", "Alias",
-                 "Cód. Servicio", "Precio Unitario", "Cantidad", "Subtotal"]
+    # ── Tabla servicios ───────────────────────────────────────────────────────
+    HEADERS    = ["N°", "Servicio", "Tipo Servicio", "Alias",
+                  "Cód. Servicio", "Precio Unitario", "Cantidad", "Subtotal"]
     HEADER_ROW = 7
     for ci, h in enumerate(HEADERS, 1):
         _celda(ws, HEADER_ROW, ci, h, bold=True, size=10, color_font="FFFFFF",
@@ -93,39 +108,38 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut, condicion_pag
                    numero_fmt=fmt, borde=B)
         ws.row_dimensions[r].height = 16
 
+    # ── Totales ───────────────────────────────────────────────────────────────
     neto          = df_cot["Subtotal"].sum()
     iva           = neto * 0.19
     total_con_iva = neto + iva
-    total_row     = data_start + len(df_cot)
-    iva_row       = total_row + 1
-    total_fin_row = total_row + 2
+    tr            = data_start + len(df_cot)
 
-    def _fila_total(fila, etiqueta, valor, destacado=False):
+    def _fila_total(fila, etiqueta, valor, dest=False):
         ws.merge_cells(f"A{fila}:G{fila}")
-        _celda(ws, fila, 1, etiqueta, bold=destacado, size=11,
-               color_font=AZUL if destacado else "000000",
-               bg=AZUL_CL if destacado else "EBF3FB",
+        _celda(ws, fila, 1, etiqueta, bold=dest, size=11,
+               color_font=AZUL if dest else "000000",
+               bg=AZUL_CL if dest else "EBF3FB",
                alineacion="right", borde=B)
-        _celda(ws, fila, 8, valor, bold=destacado, size=11,
-               color_font=AZUL if destacado else "000000",
-               bg=AZUL_CL if destacado else "EBF3FB",
+        _celda(ws, fila, 8, valor, bold=dest, size=11,
+               color_font=AZUL if dest else "000000",
+               bg=AZUL_CL if dest else "EBF3FB",
                alineacion="right", numero_fmt=fmt_pesos, borde=B)
         ws.row_dimensions[fila].height = 18
 
-    _fila_total(total_row,     "Total Neto", neto)
-    _fila_total(iva_row,       "IVA (19%)",  iva)
-    _fila_total(total_fin_row, "TOTAL",      total_con_iva, destacado=True)
+    _fila_total(tr,   "Total Neto", neto)
+    _fila_total(tr+1, "IVA (19%)",  iva)
+    _fila_total(tr+2, "TOTAL",      total_con_iva, dest=True)
 
-    INFO_START = total_fin_row + 3
-    h = INFO_START
-
+    # ── Pie informativo ───────────────────────────────────────────────────────
+    h = tr + 5
     ws.merge_cells(f"A{h}:D{h}")
     _celda(ws, h, 1, "Datos de Transferencia", bold=True, size=10,
            color_font="FFFFFF", bg=GRIS_H, alineacion="left", borde=B)
     ws.row_dimensions[h].height = 18
 
     transferencia = ["Banco: Chile", "Cuenta Corriente: 167-01052-02",
-                     "Rut: 78.793.360-2", "Casino Express S.A", f"Mail: {EMAIL_EMPRESA}"]
+                     "Rut: 78.793.360-2", "Casino Express S.A",
+                     f"Mail: {EMAIL_EMPRESA}"]
     for i, linea in enumerate(transferencia, 1):
         ws.merge_cells(f"A{h+i}:D{h+i}")
         _celda(ws, h+i, 1, linea, size=9, borde=B)
@@ -133,85 +147,83 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut, condicion_pag
 
     texto_vigencia = (
         "Los tickets comprados tienen una vigencia de 100 días a contar de la fecha de "
-        "emisión. Art. 41 Ley 19496. Por la naturaleza del servicio contratado, el prestador "
-        "no efectuará devolución alguna de dinero en caso de no uso por parte del cliente, "
-        "salvo que el servicio no esté disponible, dentro de los días y horas en que se presta."
+        "emisión. Art. 41 Ley 19496. El prestador no efectuará devolución de dinero por "
+        "no uso, salvo que el servicio no esté disponible en los días y horas en que se presta."
     )
     ws.merge_cells(f"E{h}:H{h+len(transferencia)}")
-    c_vig = ws.cell(row=h, column=5, value=texto_vigencia)
-    c_vig.font = Font(name="Calibri", size=9, color=NARANJA)
-    c_vig.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-    c_vig.border = B
+    c = ws.cell(row=h, column=5, value=texto_vigencia)
+    c.font      = Font(name="Calibri", size=9, color=NARANJA)
+    c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    c.border    = B
 
     h = h + len(transferencia) + 1
-    texto_horario = (
-        "Los pagos realizados posterior a las 14:00 horas serán considerados como pagos del día "
-        "siguiente, esto incluye los pagos informados al correo posterior el horario indicado."
-    )
-    alto_inf = 5
-    ws.merge_cells(f"A{h}:D{h+alto_inf-1}")
-    c_hor = ws.cell(row=h, column=1, value=texto_horario)
-    c_hor.font = Font(name="Calibri", size=9, italic=True)
-    c_hor.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
-    c_hor.border = B
+    ws.merge_cells(f"A{h}:D{h+4}")
+    c = ws.cell(row=h, column=1,
+                value="Los pagos realizados posterior a las 14:00 horas serán considerados "
+                      "como pagos del día siguiente, incluyendo pagos informados al correo "
+                      "posterior al horario indicado.")
+    c.font      = Font(name="Calibri", size=9, italic=True)
+    c.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
+    c.border    = B
 
     ws.merge_cells(f"E{h}:H{h}")
     _celda(ws, h, 5,
-           "Estimado cliente para recibir nuestros servicios en el casino debe realizar el pago con anticipación:",
+           "Estimado cliente, para recibir nuestros servicios debe realizar el pago con anticipación:",
            bold=True, size=9, color_font="FFFFFF", bg=GRIS_H,
            alineacion="left", wrap=True, borde=B)
     ws.row_dimensions[h].height = 28
 
-    instrucciones = [
+    for j, inst in enumerate([
         "Pago mediante transferencia electrónica 24 horas hábiles de anticipación.",
         "Pago mediante Webpay 48 horas hábiles de anticipación.",
-        "Se solicita por favor programar sus pagos para evitar suspensión de los servicios.",
-    ]
-    for j, inst in enumerate(instrucciones, 1):
+        "Se solicita programar sus pagos para evitar suspensión de los servicios.",
+    ], 1):
         ws.merge_cells(f"E{h+j}:H{h+j}")
         _celda(ws, h+j, 5, inst, size=9, color_font=NARANJA, borde=B)
         ws.row_dimensions[h+j].height = 14
-    for r in range(h+1, h+alto_inf):
-        ws.row_dimensions[r].height = 14
 
     output = BytesIO()
     wb.save(output)
     return output.getvalue()
 
 
-def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut, condicion_pago):
-    """Genera un PDF de la cotización con el mismo contenido que el Excel."""
+# ── PDF ───────────────────────────────────────────────────────────────────────
 
-    class PDF(FPDF):
-        pass
-
-    pdf = PDF(orientation="P", unit="mm", format="A4")
+def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
+                  condicion_pago, numero=""):
+    pdf = FPDF(orientation="P", unit="mm", format="A4")
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     pdf.set_margins(15, 15, 15)
-    W = 180  # ancho útil
+    W = 180
 
-    # Colores
     AZUL    = (31, 78, 121)
     AZUL_CL = (214, 228, 240)
     NARANJA = (197, 90, 17)
     GRIS_H  = (89, 89, 89)
     GRIS_F  = (242, 242, 242)
 
-    # ── Título ────────────────────────────────────────────────────────────────
-    pdf.set_font("Helvetica", "B", 16)
-    pdf.set_text_color(*AZUL)
-    pdf.cell(W, 12, "COTIZACION DE SERVICIOS", border=0, ln=1, align="C")
-    pdf.ln(2)
+    # ── Logo + Título ─────────────────────────────────────────────────────────
+    if os.path.exists(LOGO_PATH):
+        pdf.image(LOGO_PATH, x=15, y=8, w=52)
+        pdf.set_y(30)
+    else:
+        pdf.set_y(15)
 
-    # ── Info cliente/documento ─────────────────────────────────────────────────
+    titulo = f"COTIZACION DE SERVICIOS   {numero}" if numero else "COTIZACION DE SERVICIOS"
+    pdf.set_font("Helvetica", "B", 15)
+    pdf.set_text_color(*AZUL)
+    pdf.cell(W, 10, titulo, border=0, ln=1, align="C")
+    pdf.ln(3)
+
+    # ── Info cliente / documento ──────────────────────────────────────────────
     info_rows = [
-        ("Cliente:", cliente or "-", "Emision:", fecha.strftime("%d/%m/%Y")),
-        ("RUT:",     rut     or "-", "Vigencia:", vigencia.strftime("%d/%m/%Y")),
-        ("Casino:",  casino,         "Cond. Pago:", condicion_pago),
-        ("Email:",   EMAIL_EMPRESA,  "",            ""),
+        ("N Cotizacion:", numero or "-",   "Emision:",    fecha.strftime("%d/%m/%Y")),
+        ("Cliente:",      cliente or "-",  "Vigencia:",   vigencia.strftime("%d/%m/%Y")),
+        ("RUT:",          rut or "-",      "Cond. Pago:", condicion_pago),
+        ("Casino:",       casino,          "Email:",      EMAIL_EMPRESA),
     ]
-    L, V = 22, 68
+    L, V = 24, 66
     for l1, v1, l2, v2 in info_rows:
         pdf.set_font("Helvetica", "B", 9); pdf.set_text_color(0, 0, 0)
         pdf.cell(L, 6, l1, ln=0)
@@ -225,11 +237,10 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut, condicion_pago)
 
     # ── Encabezado tabla ──────────────────────────────────────────────────────
     HEADERS = ["N", "Servicio", "Tipo", "Alias", "Codigo", "Precio Unit.", "Cant.", "Subtotal"]
-    COL_W   = [8, 50, 22, 22, 18, 22, 12, 26]   # suma = 180
+    COL_W   = [8, 50, 22, 22, 18, 22, 12, 26]
     ALIGNS  = ["C", "L", "L", "L", "C", "R", "C", "R"]
 
-    pdf.set_fill_color(*AZUL)
-    pdf.set_text_color(255, 255, 255)
+    pdf.set_fill_color(*AZUL); pdf.set_text_color(255, 255, 255)
     pdf.set_font("Helvetica", "B", 9)
     for h, w, a in zip(HEADERS, COL_W, ALIGNS):
         pdf.cell(w, 8, h, border=1, ln=0, align=a, fill=True)
@@ -242,20 +253,13 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut, condicion_pago)
         neto += subtotal
         fill = (idx % 2 == 0)
         pdf.set_fill_color(*(GRIS_F if fill else (255, 255, 255)))
-        pdf.set_text_color(0, 0, 0)
-        pdf.set_font("Helvetica", "", 9)
-
+        pdf.set_text_color(0, 0, 0); pdf.set_font("Helvetica", "", 9)
         nombre = str(row.get("NombreServicio", ""))
-        if len(nombre) > 30:
-            nombre = nombre[:27] + "..."
-
-        vals = [str(idx), nombre,
-                str(row.get("TipoServicio", ""))[:18],
-                str(row.get("Alias", ""))[:18],
-                str(row.get("Codigo Servicio", "")),
-                f"${float(row.get('Precio', 0)):,.0f}",
-                str(int(row.get("Cantidad", 0))),
-                f"${subtotal:,.0f}"]
+        if len(nombre) > 30: nombre = nombre[:27] + "..."
+        vals = [str(idx), nombre, str(row.get("TipoServicio",""))[:18],
+                str(row.get("Alias",""))[:18], str(row.get("Codigo Servicio","")),
+                f"${float(row.get('Precio',0)):,.0f}",
+                str(int(row.get("Cantidad",0))), f"${subtotal:,.0f}"]
         for val, w, a in zip(vals, COL_W, ALIGNS):
             pdf.cell(w, 7, val, border=1, ln=0, align=a, fill=True)
         pdf.ln()
@@ -263,71 +267,53 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut, condicion_pago)
     # ── Totales ───────────────────────────────────────────────────────────────
     iva   = neto * 0.19
     total = neto + iva
-    TW    = sum(COL_W[:-1])  # 154 mm
+    TW    = sum(COL_W[:-1])
 
-    def _total(label, valor, destacado=False):
-        if destacado:
-            pdf.set_fill_color(*AZUL_CL)
-            pdf.set_text_color(*AZUL)
+    def _total(label, valor, dest=False):
+        if dest:
+            pdf.set_fill_color(*AZUL_CL); pdf.set_text_color(*AZUL)
             pdf.set_font("Helvetica", "B", 10)
         else:
-            pdf.set_fill_color(235, 243, 251)
-            pdf.set_text_color(0, 0, 0)
+            pdf.set_fill_color(235, 243, 251); pdf.set_text_color(0, 0, 0)
             pdf.set_font("Helvetica", "", 9)
         pdf.cell(TW, 7, label, border=1, ln=0, align="R", fill=True)
         pdf.cell(COL_W[-1], 7, f"${valor:,.0f}", border=1, ln=1, align="R", fill=True)
 
     _total("Total Neto", neto)
     _total("IVA (19%)", iva)
-    _total("TOTAL", total, destacado=True)
+    _total("TOTAL", total, dest=True)
     pdf.ln(5)
 
-    # ── Pie: transferencia e instrucciones ────────────────────────────────────
-    y0   = pdf.get_y()
-    xL   = pdf.l_margin
-    xR   = xL + 93
-    cw   = 87
+    # ── Pie ───────────────────────────────────────────────────────────────────
+    y0 = pdf.get_y(); xL = pdf.l_margin; xR = xL + 93; cw = 87
 
-    # Encabezados pie
-    pdf.set_fill_color(*GRIS_H)
-    pdf.set_text_color(255, 255, 255)
+    pdf.set_fill_color(*GRIS_H); pdf.set_text_color(255, 255, 255)
     pdf.set_font("Helvetica", "B", 9)
-    pdf.set_xy(xL, y0)
-    pdf.cell(cw, 7, "Datos de Transferencia", border=1, ln=0, fill=True)
-    pdf.set_xy(xR, y0)
-    pdf.cell(cw, 7, "Instrucciones de Pago", border=1, ln=1, fill=True)
+    pdf.set_xy(xL, y0); pdf.cell(cw, 7, "Datos de Transferencia", border=1, ln=0, fill=True)
+    pdf.set_xy(xR, y0); pdf.cell(cw, 7, "Instrucciones de Pago",  border=1, ln=1, fill=True)
 
     y1 = pdf.get_y()
     transferencia = ["Banco: Chile", "Cuenta Corriente: 167-01052-02",
                      "Rut: 78.793.360-2", "Casino Express S.A",
                      f"Mail: {EMAIL_EMPRESA}"]
-    instrucciones = [
-        "Para recibir servicios, pague con anticipacion:",
-        "- Transferencia: 24 hrs habiles de anticipacion.",
-        "- Webpay: 48 hrs habiles de anticipacion.",
-        "- Programe pagos para evitar suspension.",
-        "",
-    ]
-    pdf.set_text_color(0, 0, 0)
-    pdf.set_font("Helvetica", "", 8)
+    pdf.set_text_color(0, 0, 0); pdf.set_font("Helvetica", "", 8)
     for i, linea in enumerate(transferencia):
-        pdf.set_xy(xL, y1 + i * 5.5)
-        pdf.cell(cw, 5.5, linea, border=1)
-    pdf.set_text_color(*NARANJA)
-    for i, inst in enumerate(instrucciones):
-        pdf.set_xy(xR, y1 + i * 5.5)
-        pdf.cell(cw, 5.5, inst, border=1)
+        pdf.set_xy(xL, y1 + i * 5.5); pdf.cell(cw, 5.5, linea, border=1)
 
-    # Texto legal
+    pdf.set_text_color(*NARANJA); pdf.set_font("Helvetica", "", 8)
+    instrucciones = ["Para recibir servicios, pague con anticipacion:",
+                     "- Transferencia: 24 hrs habiles.",
+                     "- Webpay: 48 hrs habiles.",
+                     "- Programe pagos para evitar suspension.", ""]
+    for i, inst in enumerate(instrucciones):
+        pdf.set_xy(xR, y1 + i * 5.5); pdf.cell(cw, 5.5, inst, border=1)
+
     pdf.set_y(y1 + len(transferencia) * 5.5 + 3)
-    pdf.set_text_color(*NARANJA)
-    pdf.set_font("Helvetica", "I", 8)
-    texto_legal = (
+    pdf.set_text_color(*NARANJA); pdf.set_font("Helvetica", "I", 8)
+    pdf.multi_cell(W, 4.5,
         "Los tickets comprados tienen una vigencia de 100 dias a contar de la fecha de emision. "
-        "Art. 41 Ley 19496. Por la naturaleza del servicio contratado, el prestador no efectuara "
-        "devolucion alguna de dinero en caso de no uso, salvo que el servicio no este disponible."
-    )
-    pdf.multi_cell(W, 4.5, texto_legal, border=1, align="L")
+        "Art. 41 Ley 19496. El prestador no efectuara devolucion de dinero por no uso, "
+        "salvo que el servicio no este disponible.", border=1, align="L")
 
     return bytes(pdf.output())
 
@@ -343,7 +329,7 @@ def render_cotizador(df_precios, df_clientes=None):
         st.session_state.cot_casino_prev = None
 
     if df_precios.empty:
-        st.warning("No hay datos de precios cargados. Conéctate a FasesUAT para continuar.")
+        st.warning("No hay datos de precios cargados.")
         if st.button("🔄 Cargar Precios desde FasesUAT"):
             from database import recargar_precios
             with st.spinner("Descargando precios..."):
@@ -351,7 +337,7 @@ def render_cotizador(df_precios, df_clientes=None):
             st.rerun()
         return
 
-    hoy           = datetime.date.today()
+    hoy            = datetime.date.today()
     vigencia_fecha = hoy + datetime.timedelta(days=7)
 
     # ── Casino ────────────────────────────────────────────────────────────────
@@ -363,123 +349,110 @@ def render_cotizador(df_precios, df_clientes=None):
         st.markdown("<div style='margin-top:28px'>", unsafe_allow_html=True)
         if st.button("🔄 Actualizar Precios", key="cot_reload"):
             from database import recargar_precios, recargar_clientes
-            with st.spinner("Actualizando..."):
-                recargar_precios()
-                recargar_clientes()
+            with st.spinner("Actualizando..."): recargar_precios(); recargar_clientes()
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
     if st.session_state.cot_casino_prev != casino_sel:
         st.session_state.cot_items = []
         st.session_state.cot_casino_prev = casino_sel
-        for k in ("cot_cliente_sel", "cot_rut_sel", "cot_nombre_manual", "cot_rut_manual"):
+        for k in ("cot_cliente_sel", "cot_rut_sel", "cot_nombre_manual",
+                  "cot_rut_manual", "cot_creada", "cot_estado_hash"):
             st.session_state.pop(k, None)
 
     # ── Datos del Cliente ─────────────────────────────────────────────────────
     st.markdown("#### Datos del Cliente")
-
     manual = st.checkbox("Ingresar cliente manualmente (no está en el listado)",
                          key="cot_manual", value=False)
 
     if manual:
-        # Entrada libre
         col_c1, col_c2, col_c3 = st.columns(3)
         with col_c1:
-            nombre_manual = st.text_input("Nombre del Cliente:",
-                                          key="cot_nombre_manual",
+            nombre_manual = st.text_input("Nombre del Cliente:", key="cot_nombre_manual",
                                           placeholder="Razón social...")
         with col_c2:
-            rut_manual = st.text_input("RUT:",
-                                       key="cot_rut_manual",
+            rut_manual = st.text_input("RUT:", key="cot_rut_manual",
                                        placeholder="XX.XXX.XXX-X")
         with col_c3:
-            condicion = st.selectbox("Condiciones de Pago:",
-                                     options=CONDICIONES_PAGO, key="cot_condicion")
+            condicion = st.selectbox("Condiciones de Pago:", options=CONDICIONES_PAGO,
+                                     key="cot_condicion")
         cliente_val = nombre_manual.strip()
         rut_auto    = rut_manual.strip()
     else:
-        # Búsqueda en listado
         df_uniq = pd.DataFrame()
         if df_clientes is not None and not df_clientes.empty:
             df_uniq = (df_clientes[["RazonSocial", "RutContratista"]]
-                       .drop_duplicates()
-                       .sort_values("RazonSocial")
-                       .reset_index(drop=True))
+                       .drop_duplicates().sort_values("RazonSocial").reset_index(drop=True))
 
-        PLACEHOLDER_NOMBRE = "— Buscar por nombre —"
-        PLACEHOLDER_RUT    = "— Buscar por RUT —"
+        PH_N = "— Buscar por nombre —"
+        PH_R = "— Buscar por RUT —"
+        op_n = [PH_N] + (df_uniq["RazonSocial"].tolist() if not df_uniq.empty else [])
+        op_r = [PH_R] + (sorted(df_uniq["RutContratista"].astype(str).unique().tolist())
+                          if not df_uniq.empty else [])
 
-        opciones_nombre = [PLACEHOLDER_NOMBRE] + (df_uniq["RazonSocial"].tolist() if not df_uniq.empty else [])
-        opciones_rut    = [PLACEHOLDER_RUT]    + (sorted(df_uniq["RutContratista"].astype(str).unique().tolist()) if not df_uniq.empty else [])
-
-        if st.session_state.get("cot_cliente_sel", PLACEHOLDER_NOMBRE) not in opciones_nombre:
-            st.session_state["cot_cliente_sel"] = PLACEHOLDER_NOMBRE
-        if st.session_state.get("cot_rut_sel", PLACEHOLDER_RUT) not in opciones_rut:
-            st.session_state["cot_rut_sel"] = PLACEHOLDER_RUT
+        if st.session_state.get("cot_cliente_sel", PH_N) not in op_n:
+            st.session_state["cot_cliente_sel"] = PH_N
+        if st.session_state.get("cot_rut_sel", PH_R) not in op_r:
+            st.session_state["cot_rut_sel"] = PH_R
 
         def _on_nombre():
-            nombre = st.session_state.get("cot_cliente_sel", PLACEHOLDER_NOMBRE)
-            if nombre != PLACEHOLDER_NOMBRE and not df_uniq.empty:
-                match = df_uniq[df_uniq["RazonSocial"] == nombre]
-                if not match.empty:
-                    st.session_state["cot_rut_sel"] = str(match["RutContratista"].iloc[0])
+            n = st.session_state.get("cot_cliente_sel", PH_N)
+            if n != PH_N and not df_uniq.empty:
+                m = df_uniq[df_uniq["RazonSocial"] == n]
+                st.session_state["cot_rut_sel"] = str(m["RutContratista"].iloc[0]) if not m.empty else PH_R
             else:
-                st.session_state["cot_rut_sel"] = PLACEHOLDER_RUT
+                st.session_state["cot_rut_sel"] = PH_R
 
         def _on_rut():
-            rut = st.session_state.get("cot_rut_sel", PLACEHOLDER_RUT)
-            if rut != PLACEHOLDER_RUT and not df_uniq.empty:
-                match = df_uniq[df_uniq["RutContratista"].astype(str) == rut]
-                if not match.empty:
-                    st.session_state["cot_cliente_sel"] = match["RazonSocial"].iloc[0]
+            r = st.session_state.get("cot_rut_sel", PH_R)
+            if r != PH_R and not df_uniq.empty:
+                m = df_uniq[df_uniq["RutContratista"].astype(str) == r]
+                st.session_state["cot_cliente_sel"] = m["RazonSocial"].iloc[0] if not m.empty else PH_N
             else:
-                st.session_state["cot_cliente_sel"] = PLACEHOLDER_NOMBRE
+                st.session_state["cot_cliente_sel"] = PH_N
 
         col_c1, col_c2, col_c3 = st.columns(3)
         with col_c1:
-            nombre_sel = st.selectbox("Nombre del Cliente:", options=opciones_nombre,
+            nombre_sel = st.selectbox("Nombre del Cliente:", options=op_n,
                                       key="cot_cliente_sel", on_change=_on_nombre)
         with col_c2:
-            rut_sel = st.selectbox("RUT:", options=opciones_rut,
+            rut_sel = st.selectbox("RUT:", options=op_r,
                                    key="cot_rut_sel", on_change=_on_rut)
         with col_c3:
-            condicion = st.selectbox("Condiciones de Pago:",
-                                     options=CONDICIONES_PAGO, key="cot_condicion")
+            condicion = st.selectbox("Condiciones de Pago:", options=CONDICIONES_PAGO,
+                                     key="cot_condicion")
 
-        cliente_val = nombre_sel if nombre_sel != PLACEHOLDER_NOMBRE else ""
-        rut_auto    = rut_sel    if rut_sel    != PLACEHOLDER_RUT    else ""
+        cliente_val = nombre_sel if nombre_sel != PH_N else ""
+        rut_auto    = rut_sel    if rut_sel    != PH_R else ""
 
     col_d1, col_d2, col_d3 = st.columns(3)
     with col_d1:
         st.text_input("Email de contacto:", value=EMAIL_EMPRESA, disabled=True, key="cot_email")
     with col_d2:
-        st.text_input("Fecha de Emisión:", value=hoy.strftime("%d/%m/%Y"), disabled=True, key="cot_emision")
+        st.text_input("Fecha de Emisión:", value=hoy.strftime("%d/%m/%Y"),
+                      disabled=True, key="cot_emision")
     with col_d3:
-        st.text_input("Vigencia de Cotización:", value=vigencia_fecha.strftime("%d/%m/%Y"),
+        st.text_input("Vigencia:", value=vigencia_fecha.strftime("%d/%m/%Y"),
                       disabled=True, key="cot_vigencia")
 
     # ── Buscador de servicios ─────────────────────────────────────────────────
     st.markdown("---")
-    COLS_ITEM       = ["NombreServicio", "TipoServicio", "Alias", "Codigo Servicio", "Precio"]
-    servicios_casino = (
-        df_precios[df_precios["Nombre Casino"] == casino_sel]
-        [[c for c in COLS_ITEM if c in df_precios.columns]]
-        .drop_duplicates()
-    )
-    ya_agregados = {item["NombreServicio"] for item in st.session_state.cot_items}
-    servicios_disp = servicios_casino[~servicios_casino["NombreServicio"].isin(ya_agregados)]
+    COLS_ITEM        = ["NombreServicio", "TipoServicio", "Alias", "Codigo Servicio", "Precio"]
+    servicios_casino = (df_precios[df_precios["Nombre Casino"] == casino_sel]
+                        [[c for c in COLS_ITEM if c in df_precios.columns]]
+                        .drop_duplicates())
+    ya_agregados     = {i["NombreServicio"] for i in st.session_state.cot_items}
+    servicios_disp   = servicios_casino[~servicios_casino["NombreServicio"].isin(ya_agregados)]
 
     col_search, col_add = st.columns([5, 1])
     with col_search:
         if servicios_disp.empty:
-            st.info("Todos los servicios de este casino ya están en la cotización.")
+            st.info("Todos los servicios de este casino ya están agregados.")
             servicio_sel = None
         else:
-            servicio_sel = st.selectbox(
-                "Buscar servicio:",
-                options=sorted(servicios_disp["NombreServicio"].unique().tolist()),
-                key="cot_search"
-            )
+            servicio_sel = st.selectbox("Buscar servicio:",
+                                        options=sorted(servicios_disp["NombreServicio"].unique().tolist()),
+                                        key="cot_search")
     with col_add:
         st.markdown("<div style='margin-top:28px'>", unsafe_allow_html=True)
         agregar = st.button("➕ Agregar", use_container_width=True, key="cot_agregar")
@@ -495,6 +468,7 @@ def render_cotizador(df_precios, df_clientes=None):
             "Precio":          fila.get("Precio", 0),
             "Cantidad":        1,
         })
+        st.session_state.pop("cot_creada", None)
         st.rerun()
 
     # ── Vista previa ──────────────────────────────────────────────────────────
@@ -504,7 +478,7 @@ def render_cotizador(df_precios, df_clientes=None):
         st.info("Selecciona un servicio y presiona **➕ Agregar** para comenzar.")
         return
 
-    df_preview = pd.DataFrame(st.session_state.cot_items)
+    df_preview         = pd.DataFrame(st.session_state.cot_items)
     df_preview["Eliminar"] = False
 
     df_editado = st.data_editor(
@@ -535,10 +509,12 @@ def render_cotizador(df_precios, df_clientes=None):
                 item for i, item in enumerate(st.session_state.cot_items)
                 if i >= len(df_editado) or not df_editado.iloc[i].get("Eliminar", False)
             ]
+            st.session_state.pop("cot_creada", None)
             st.rerun()
     with col_clear:
         if st.button("Limpiar todo", key="cot_clear"):
             st.session_state.cot_items = []
+            st.session_state.pop("cot_creada", None)
             st.rerun()
 
     # ── Totales ───────────────────────────────────────────────────────────────
@@ -546,56 +522,67 @@ def render_cotizador(df_precios, df_clientes=None):
     df_cot["Subtotal"] = df_cot["Cantidad"] * df_cot["Precio"]
 
     col_k1, col_k2, col_k3 = st.columns(3)
-    with col_k1:
-        st.metric("Servicios en cotización", len(df_cot))
-    with col_k2:
-        st.metric("Total tickets cotizados", f"{int(df_cot['Cantidad'].sum()):,}")
-    with col_k3:
-        st.metric("Total Cotización", f"${df_cot['Subtotal'].sum():,.0f}")
+    with col_k1: st.metric("Servicios", len(df_cot))
+    with col_k2: st.metric("Tickets totales", f"{int(df_cot['Cantidad'].sum()):,}")
+    with col_k3: st.metric("Total Cotización", f"${df_cot['Subtotal'].sum():,.0f}")
 
-    # ── Exportar ──────────────────────────────────────────────────────────────
-    nombre_cliente  = cliente_val or ""
-    nombre_base     = f"Cotizacion_{casino_sel.replace(' ', '_')}_{hoy.strftime('%Y%m%d')}"
+    # ── Detectar cambios para invalidar cotización ya creada ──────────────────
+    estado = f"{casino_sel}|{cliente_val}|{rut_auto}|{condicion}|" \
+             + str([(i["NombreServicio"], i["Cantidad"]) for i in st.session_state.cot_items])
+    if st.session_state.get("cot_estado_hash") != estado:
+        st.session_state["cot_estado_hash"] = estado
+        st.session_state.pop("cot_creada", None)
 
-    export_args = dict(
-        df_cot        = df_cot,
-        casino        = casino_sel,
-        fecha         = hoy,
-        vigencia      = vigencia_fecha,
-        cliente       = nombre_cliente,
-        rut           = rut_auto,
-        condicion_pago= condicion,
-    )
+    st.markdown("---")
 
-    excel_data = _exportar_excel(**export_args)
-    pdf_data   = _exportar_pdf(**export_args)
+    # ── Flujo: Crear → Descargar ──────────────────────────────────────────────
+    if not st.session_state.get("cot_creada", False):
+        st.info("Revisa los datos y presiona **Crear Cotización** para registrarla y habilitar la descarga.")
+        if st.button("✅ Crear Cotización", type="primary", use_container_width=True, key="cot_crear"):
+            from utils.historial import guardar_cotizacion, _siguiente_numero, formato_numero
+            n      = _siguiente_numero()
+            numero = formato_numero(n, hoy.year)
 
-    col_dl1, col_dl2 = st.columns(2)
+            export_args = dict(df_cot=df_cot, casino=casino_sel, fecha=hoy,
+                               vigencia=vigencia_fecha, cliente=cliente_val,
+                               rut=rut_auto, condicion_pago=condicion, numero=numero)
 
-    with col_dl1:
-        if st.download_button(
-            label="📥 Descargar Excel",
-            data=excel_data,
-            file_name=f"{nombre_base}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True,
-        ):
-            try:
-                from utils.historial import guardar_cotizacion
-                guardar_cotizacion(
-                    **export_args,
-                    excel_bytes = excel_data,
-                    pdf_bytes   = pdf_data,
-                )
-                st.success("Cotización guardada en el historial.")
-            except Exception as e:
-                st.warning(f"No se pudo guardar en historial: {e}")
+            with st.spinner("Generando documentos..."):
+                excel_data = _exportar_excel(**export_args)
+                pdf_data   = _exportar_pdf(**export_args)
+                guardar_cotizacion(**export_args, excel_bytes=excel_data, pdf_bytes=pdf_data)
 
-    with col_dl2:
-        st.download_button(
-            label="📄 Descargar PDF",
-            data=pdf_data,
-            file_name=f"{nombre_base}.pdf",
-            mime="application/pdf",
-            use_container_width=True,
-        )
+            st.session_state["cot_creada"]       = True
+            st.session_state["cot_numero"]        = numero
+            st.session_state["cot_excel_dl"]      = excel_data
+            st.session_state["cot_pdf_dl"]        = pdf_data
+            st.session_state["cot_nombre_base"]   = (
+                f"Cotizacion_{numero}_{casino_sel.replace(' ','_')}")
+            st.rerun()
+    else:
+        numero     = st.session_state.get("cot_numero", "")
+        nombre_base = st.session_state.get("cot_nombre_base", f"Cotizacion_{numero}")
+
+        st.success(f"Cotización **{numero}** creada y guardada en el historial.")
+
+        col_dl1, col_dl2 = st.columns(2)
+        with col_dl1:
+            st.download_button("📥 Descargar Excel",
+                               data=st.session_state["cot_excel_dl"],
+                               file_name=f"{nombre_base}.xlsx",
+                               mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                               use_container_width=True)
+        with col_dl2:
+            st.download_button("📄 Descargar PDF",
+                               data=st.session_state["cot_pdf_dl"],
+                               file_name=f"{nombre_base}.pdf",
+                               mime="application/pdf",
+                               use_container_width=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("🆕 Nueva Cotización", use_container_width=True, key="cot_nueva"):
+            st.session_state.cot_items = []
+            for k in ["cot_creada", "cot_numero", "cot_excel_dl", "cot_pdf_dl",
+                      "cot_nombre_base", "cot_estado_hash", "cot_casino_prev"]:
+                st.session_state.pop(k, None)
+            st.rerun()
