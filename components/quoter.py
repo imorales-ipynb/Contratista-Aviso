@@ -403,9 +403,9 @@ def render_cotizador(df_precios, df_clientes=None, df_jerarquia=None):
     with col_op:
         operador = st.selectbox("Operador:", options=OPERADORES, key="cot_operador")
     with col_gte:
-        st.text_input("Gerente de Servicio:", value=gerente, disabled=True, key="cot_gerente")
+        st.text_input("Gerente de Servicio:", value=gerente, disabled=True, key=f"cot_gerente_{casino_sel}")
     with col_jefe:
-        st.text_input("Jefe de Servicio:", value=jefe, disabled=True, key="cot_jefe")
+        st.text_input("Jefe de Servicio:", value=jefe, disabled=True, key=f"cot_jefe_{casino_sel}")
 
     # ── Datos del Cliente ─────────────────────────────────────────────────────
     st.markdown("#### Datos del Cliente")
