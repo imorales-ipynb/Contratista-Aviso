@@ -19,15 +19,15 @@ with st.sidebar:
     st.markdown("### Respaldo")
     backup_bytes = exportar_backup()
     st.download_button(
-        label="💾 Descargar Backup JSON",
+        label="💾 Descargar Backup ZIP",
         data=backup_bytes,
-        file_name="backup_historial.json",
-        mime="application/json",
+        file_name="backup_historial.zip",
+        mime="application/zip",
         use_container_width=True,
     )
     st.markdown("---")
     st.markdown("**Restaurar desde backup:**")
-    uploaded = st.file_uploader("Subir backup JSON", type=["json"], key="backup_upload")
+    uploaded = st.file_uploader("Subir backup (.zip o .json)", type=["zip", "json"], key="backup_upload")
     if uploaded is not None:
         if st.button("⬆️ Restaurar", use_container_width=True, key="btn_restaurar"):
             try:

@@ -1,6 +1,8 @@
 import json
 import os
 import datetime
+import zipfile
+from io import BytesIO
 import pandas as pd
 
 from config import HISTORIAL_JSON as HISTORIAL_PATH, HISTORIAL_DIR as COTIZACIONES_DIR
@@ -50,8 +52,9 @@ def guardar_cotizacion(df_cot, casino, fecha, vigencia, cliente, rut,
         except Exception:
             pass
 
-    items = df_cot[["NombreServicio", "TipoServicio", "Alias",
-                    "Precio", "Cantidad", "Subtotal"]].to_dict("records")
+    cols_items = [c for c in ["NombreServicio", "TipoServicio", "Alias",
+                              "Precio", "Cantidad", "Subtotal"] if c in df_cot.columns]
+    items = df_cot[cols_items].to_dict("records")
 
     registro = {
         "id":             cid,
@@ -107,12 +110,43 @@ def eliminar_cotizacion(cid: str):
 # ── Backup / Restore ──────────────────────────────────────────────────────────
 
 def exportar_backup() -> bytes:
-    return json.dumps(_leer_json(), ensure_ascii=False, indent=2).encode("utf-8")
+    """ZIP con historial_cotizaciones.json + todos los Excel/PDF referenciados."""
+    datos = _leer_json()
+    buf   = BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("historial_cotizaciones.json",
+                    json.dumps(datos, ensure_ascii=False, indent=2))
+        for r in datos:
+            for campo in ("archivo", "archivo_pdf"):
+                path = r.get(campo)
+                if path and os.path.exists(path):
+                    zf.write(path, os.path.basename(path))
+    buf.seek(0)
+    return buf.getvalue()
 
 
 def importar_backup(contenido: bytes):
-    datos = json.loads(contenido.decode("utf-8"))
+    """Acepta ZIP (nuevo) o JSON plano (formato antiguo)."""
     _asegurar_dirs()
+    if contenido[:2] == b'PK':  # ZIP magic bytes
+        with zipfile.ZipFile(BytesIO(contenido)) as zf:
+            datos = json.loads(
+                zf.read("historial_cotizaciones.json").decode("utf-8"))
+            for name in zf.namelist():
+                if name == "historial_cotizaciones.json":
+                    continue
+                dest = os.path.join(COTIZACIONES_DIR, name)
+                with zf.open(name) as src, open(dest, "wb") as dst:
+                    dst.write(src.read())
+        # Reapunta las rutas al COTIZACIONES_DIR actual
+        for r in datos:
+            for campo in ("archivo", "archivo_pdf"):
+                if r.get(campo):
+                    r[campo] = os.path.join(
+                        COTIZACIONES_DIR, os.path.basename(r[campo]))
+    else:
+        datos = json.loads(contenido.decode("utf-8"))
+
     with open(HISTORIAL_PATH, "w", encoding="utf-8") as f:
         json.dump(datos, f, ensure_ascii=False, indent=2)
 
