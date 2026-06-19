@@ -266,7 +266,8 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
     COL_W   = [8, 80, 22, 28, 14, 28]
     ALIGNS  = ["C", "L", "C", "R", "C", "R"]
 
-    pdf.set_fill_color(*AZUL); pdf.set_text_color(*BLANCO)
+    AZUL_CL_HDR = (91, 155, 213)
+    pdf.set_fill_color(*AZUL_CL_HDR); pdf.set_text_color(*BLANCO)
     pdf.set_font("Helvetica", "B", 9)
     for h, w, a in zip(HEADERS, COL_W, ALIGNS):
         pdf.cell(w, 8, h, border=1, ln=0, align=a, fill=True)
@@ -290,13 +291,16 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
             pdf.cell(w, 7, val, border=1, ln=0, align=a, fill=True)
         pdf.ln()
 
-    # ── Totales (negro/blanco, compactos, alineados a la derecha) ────────────
+    # ── Totales (gris, alineados con columnas Código→Subtotal) ───────────────
     iva   = neto * 0.19
     total = neto + iva
-    TL, TV = 65, 30   # ancho etiqueta / ancho valor
+    # TL arranca en la misma x que la columna "Código"
+    TL = COL_W[2] + COL_W[3] + COL_W[4]   # 22+28+14 = 64mm
+    TV = COL_W[5]                           # 28mm = ancho Subtotal
+    TOT_X = pdf.l_margin + COL_W[0] + COL_W[1]   # 15+8+80 = 103
 
     def _total(label, valor):
-        pdf.set_x(pdf.l_margin + W - TL - TV)
+        pdf.set_x(TOT_X)
         pdf.set_fill_color(*GRIS_H); pdf.set_text_color(*BLANCO)
         pdf.set_font("Helvetica", "B", 8)
         pdf.cell(TL, 6, label, border=1, ln=0, align="R", fill=True)
@@ -361,7 +365,7 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
     # ── Footer (fijo al fondo) ────────────────────────────────────────────────
     pdf.set_auto_page_break(False)
     pdf.set_y(-22)
-    pdf.set_fill_color(*NEGRO); pdf.set_text_color(*BLANCO)
+    pdf.set_fill_color(*GRIS_H); pdf.set_text_color(*BLANCO)
     pdf.set_font("Helvetica", "B", 9)
     pdf.cell(W, 7,
              f"Atendido por: {operador or '-'}",
