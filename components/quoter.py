@@ -72,7 +72,7 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut,
     # ── Filas 2-7: Info cliente / documento ──────────────────────────────────
     contacto = f"{EMAIL_EMPRESA}   |   Tel: {TELEFONOS}"
     info_doc = [
-        ("N° Cotizacion:", numero,          "Emision:",        fecha.strftime("%d/%m/%Y")),
+        ("N° Cotización:", numero,          "Emisión:",         fecha.strftime("%d/%m/%Y")),
         ("Cliente:",       cliente,         "Vigencia:",       vigencia.strftime("%d/%m/%Y")),
         ("RUT:",           rut,             "Cond. Pago:",     condicion_pago),
         ("Casino:",        casino,          "Operador:",       operador),
@@ -228,11 +228,11 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
     else:
         pdf.set_y(15)
 
-    # ── Título ────────────────────────────────────────────────────────────────
-    titulo = f"COTIZACION DE SERVICIOS   {numero}" if numero else "COTIZACION DE SERVICIOS"
-    pdf.set_font("Helvetica", "B", 14)
-    pdf.set_text_color(*AZUL)
-    pdf.cell(W, 10, titulo, border=0, ln=1, align="C")
+    # ── Número de cotización ──────────────────────────────────────────────────
+    if numero:
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.set_text_color(*AZUL)
+        pdf.cell(W, 8, numero, border=0, ln=1, align="C")
     pdf.ln(3)
 
     # ── Info cliente / documento ──────────────────────────────────────────────
@@ -241,11 +241,11 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
         return txt[:n] + "..." if len(txt) > n else txt
 
     info_rows = [
-        ("N Cotizacion:", _tv(numero, 20),            "Emision:",       fecha.strftime("%d/%m/%Y")),
-        ("Cliente:",      _tv(cliente, 30),           "Vigencia:",      vigencia.strftime("%d/%m/%Y")),
-        ("RUT:",          _tv(rut, 20),               "Cond. Pago:",    _tv(condicion_pago, 20)),
-        ("Casino:",       _tv(casino, 28),            "Operador:",      _tv(operador, 22)),
-        ("Gte. Servicio:",_tv(gerente_servicio, 28),  "Jefe Servicio:", _tv(jefe_servicio, 28)),
+        ("N° Cotización:", _tv(numero, 20),           "Emisión:",       fecha.strftime("%d/%m/%Y")),
+        ("Cliente:",       _tv(cliente, 30),          "Vigencia:",      vigencia.strftime("%d/%m/%Y")),
+        ("RUT:",           _tv(rut, 20),              "Cond. Pago:",    _tv(condicion_pago, 20)),
+        ("Casino:",        _tv(casino, 28),           "Operador:",      _tv(operador, 22)),
+        ("Gte. Servicio:", _tv(gerente_servicio, 28), "Jefe Servicio:", _tv(jefe_servicio, 28)),
     ]
     L, V = 26, 64
     H_ROW = 7
@@ -262,7 +262,7 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
     pdf.ln(4)
 
     # ── Tabla servicios ───────────────────────────────────────────────────────
-    HEADERS = ["N", "Servicio", "Codigo", "Precio Unit.", "Cant.", "Subtotal"]
+    HEADERS = ["N°", "Servicio", "Código", "Precio Unit.", "Cant.", "Subtotal"]
     COL_W   = [8, 80, 22, 28, 14, 28]
     ALIGNS  = ["C", "L", "C", "R", "C", "R"]
 
@@ -297,10 +297,10 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
 
     def _total(label, valor):
         pdf.set_x(pdf.l_margin + W - TL - TV)
-        pdf.set_fill_color(*NEGRO); pdf.set_text_color(*BLANCO)
-        pdf.set_font("Helvetica", "B", 9)
-        pdf.cell(TL, 7, label, border=1, ln=0, align="R", fill=True)
-        pdf.cell(TV, 7, f"${valor:,.0f}", border=1, ln=1, align="R", fill=True)
+        pdf.set_fill_color(*GRIS_H); pdf.set_text_color(*BLANCO)
+        pdf.set_font("Helvetica", "B", 8)
+        pdf.cell(TL, 6, label, border=1, ln=0, align="R", fill=True)
+        pdf.cell(TV, 6, f"${valor:,.0f}", border=1, ln=1, align="R", fill=True)
 
     _total("Total Neto", neto)
     _total("IVA (19%)", iva)
@@ -323,10 +323,10 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
                "Cuenta Corriente: 167-01052-02",
                "Rut: 78.793.360-2",
                "Casino Express S.A"]
-    instrs  = ["Para recibir servicios, pague con anticipacion:",
-               "- Transferencia: 24 hrs habiles.",
-               "- Getnet: 48 hrs habiles.",
-               "- Programe pagos para evitar suspension."]
+    instrs  = ["Para recibir servicios, pague con anticipación:",
+               "- Transferencia: 24 hrs hábiles.",
+               "- Getnet: 48 hrs hábiles.",
+               "- Programe pagos para evitar suspensión."]
     n_rows  = max(len(transf), len(instrs))
     block_h = n_rows * ROW_H
 
@@ -353,9 +353,9 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
     pdf.set_fill_color(*NARANJA); pdf.set_text_color(*BLANCO)
     pdf.set_font("Helvetica", "B", 10)
     pdf.multi_cell(W, 6.5,
-        "IMPORTANTE: Los tickets comprados tienen una vigencia de 100 dias a contar de la "
-        "fecha de emision. Art. 41 Ley 19496. El prestador no efectuara devolucion de dinero "
-        "por no uso, salvo que el servicio no este disponible en los dias y horas en que se presta.",
+        "IMPORTANTE: Los tickets comprados tienen una vigencia de 100 días a contar de la "
+        "fecha de emisión. Art. 41 Ley 19496. El prestador no efectuará devolución de dinero "
+        "por no uso, salvo que el servicio no esté disponible en los días y horas en que se presta.",
         border=0, align="L", fill=True)
 
     # ── Footer (fijo al fondo) ────────────────────────────────────────────────
