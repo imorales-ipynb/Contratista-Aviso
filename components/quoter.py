@@ -75,7 +75,7 @@ def _exportar_excel(df_cot, casino, fecha, vigencia, cliente, rut,
         ("N° Cotización:", numero,          "Emisión:",         fecha.strftime("%d/%m/%Y")),
         ("Cliente:",       cliente,         "Vigencia:",       vigencia.strftime("%d/%m/%Y")),
         ("RUT:",           rut,             "Cond. Pago:",     condicion_pago),
-        ("Casino:",        casino,          "Operador:",       operador),
+        ("Casino:",        casino,          "Ejecutivo:",       operador),
         ("Gte. Servicio:", gerente_servicio,"Jefe Servicio:",  jefe_servicio),
         ("Email / Tel:",   contacto,        "",                ""),
     ]
@@ -244,7 +244,7 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
         ("N° Cotización:", _tv(numero, 20),           "Emisión:",       fecha.strftime("%d/%m/%Y")),
         ("Cliente:",       _tv(cliente, 30),          "Vigencia:",      vigencia.strftime("%d/%m/%Y")),
         ("RUT:",           _tv(rut, 20),              "Cond. Pago:",    _tv(condicion_pago, 20)),
-        ("Casino:",        _tv(casino, 28),           "Operador:",      _tv(operador, 22)),
+        ("Casino:",        _tv(casino, 28),           "Ejecutivo:",      _tv(operador, 22)),
         ("Gte. Servicio:", _tv(gerente_servicio, 28), "Jefe Servicio:", _tv(jefe_servicio, 28)),
     ]
     L, V = 26, 64
