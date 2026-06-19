@@ -111,5 +111,190 @@
         "Subtotal": 5136.0
       }
     ]
+  },
+  {
+    "id": "20260612_142429_APRO",
+    "numero": "COT-2026-001",
+    "numero_int": 1,
+    "fecha_emision": "2026-06-12",
+    "vigencia": "2026-06-19",
+    "casino": "APRO",
+    "cliente": "A&H MANTENCION INDUSTRIAL SPA",
+    "rut": "77271998-1",
+    "condicion_pago": "Anticipado",
+    "n_servicios": 1,
+    "total_neto": 4977.0,
+    "iva": 946.0,
+    "total": 5923.0,
+    "archivo": "data/cotizaciones/20260612_142429_APRO.xlsx",
+    "archivo_pdf": "data/cotizaciones/20260612_142429_APRO.pdf",
+    "items": [
+      {
+        "NombreServicio": "ALMUERZO CONTRATISTAS",
+        "TipoServicio": "NINGUNO",
+        "Alias": "ALMUERZO CONTRATISTAS",
+        "Precio": 4977.0,
+        "Cantidad": 1,
+        "Subtotal": 4977.0
+      }
+    ]
+  },
+  {
+    "id": "20260619_123147_A_ENCUADERNADORES_(_",
+    "numero": "COT-2026-002",
+    "numero_int": 2,
+    "fecha_emision": "2026-06-19",
+    "vigencia": "2026-06-26",
+    "casino": "A ENCUADERNADORES ( ENCUADERNACION)",
+    "cliente": "A MAYER REFRIGERACION INDUSTRIAL S A",
+    "rut": "96889760-8",
+    "condicion_pago": "Anticipado",
+    "operador": "Fabián Flores",
+    "gerente_servicio": "Paulina Duran",
+    "jefe_servicio": "Henry Figueroa",
+    "n_servicios": 2,
+    "total_neto": 499797.0,
+    "iva": 94961.0,
+    "total": 594758.0,
+    "archivo": "data\\cotizaciones\\20260619_123147_A_ENCUADERNADORES_(_.xlsx",
+    "archivo_pdf": "data\\cotizaciones\\20260619_123147_A_ENCUADERNADORES_(_.pdf",
+    "items": [
+      {
+        "NombreServicio": "ALMUERZO",
+        "TipoServicio": "NINGUNO",
+        "Alias": "ALMUERZO",
+        "Precio": 2889.0,
+        "Cantidad": 23,
+        "Subtotal": 66447.0
+      },
+      {
+        "NombreServicio": "CENA",
+        "TipoServicio": "NINGUNO",
+        "Alias": "CENA",
+        "Precio": 2889.0,
+        "Cantidad": 150,
+        "Subtotal": 433350.0
+      }
+    ]
+  },
+  {
+    "id": "20260619_124101_ACMA",
+    "numero": "COT-2026-003",
+    "numero_int": 3,
+    "fecha_emision": "2026-06-19",
+    "vigencia": "2026-06-26",
+    "casino": "ACMA",
+    "cliente": "A INGENIERIA SPA",
+    "rut": "77337968-8",
+    "condicion_pago": "Anticipado",
+    "operador": "Wilson Prado",
+    "gerente_servicio": "Mauricio Diaz Dosque",
+    "jefe_servicio": "Eduardo Arroyo Fonseca",
+    "n_servicios": 1,
+    "total_neto": 78340.0,
+    "iva": 14885.0,
+    "total": 93225.0,
+    "archivo": "data\\cotizaciones\\20260619_124101_ACMA.xlsx",
+    "archivo_pdf": "data\\cotizaciones\\20260619_124101_ACMA.pdf",
+    "items": [
+      {
+        "NombreServicio": "ALMUERZO",
+        "TipoServicio": "NINGUNO",
+        "Alias": "ALMUERZO",
+        "Precio": 3917.0,
+        "Cantidad": 20,
+        "Subtotal": 78340.0
+      }
+    ]
+  },
+  {
+    "id": "20260619_124201_A_ENCUADERNADORES_(_",
+    "numero": "COT-2026-004",
+    "numero_int": 4,
+    "fecha_emision": "2026-06-19",
+    "vigencia": "2026-06-26",
+    "casino": "A ENCUADERNADORES ( ENCUADERNACION)",
+    "cliente": "A & E MONTAJE INDUSTRIAL SPA",
+    "rut": "76519026-6",
+    "condicion_pago": "Anticipado",
+    "operador": "Fabián Flores",
+    "gerente_servicio": "Paulina Duran",
+    "jefe_servicio": "Henry Figueroa",
+    "n_servicios": 1,
+    "total_neto": 231120.0,
+    "iva": 43913.0,
+    "total": 275033.0,
+    "archivo": "data\\cotizaciones\\20260619_124201_A_ENCUADERNADORES_(_.xlsx",
+    "archivo_pdf": "data\\cotizaciones\\20260619_124201_A_ENCUADERNADORES_(_.pdf",
+    "items": [
+      {
+        "NombreServicio": "ALMUERZO CONTRATISTAS",
+        "TipoServicio": "NINGUNO",
+        "Alias": "ALMUERZO CONTRATISTAS",
+        "Precio": 5136.0,
+        "Cantidad": 45,
+        "Subtotal": 231120.0
+      }
+    ]
+  },
+  {
+    "id": "20260619_124700_A_ENCUADERNADORES_(_",
+    "numero": "COT-2026-005",
+    "numero_int": 5,
+    "fecha_emision": "2026-06-19",
+    "vigencia": "2026-06-26",
+    "casino": "A ENCUADERNADORES ( ENCUADERNACION)",
+    "cliente": "A & E MONTAJE INDUSTRIAL SPA",
+    "rut": "76519026-6",
+    "condicion_pago": "Anticipado",
+    "operador": "Fabián Flores",
+    "gerente_servicio": "Paulina Duran",
+    "jefe_servicio": "Henry Figueroa",
+    "n_servicios": 1,
+    "total_neto": 57780.0,
+    "iva": 10978.0,
+    "total": 68758.0,
+    "archivo": "data\\cotizaciones\\20260619_124700_A_ENCUADERNADORES_(_.xlsx",
+    "archivo_pdf": "data\\cotizaciones\\20260619_124700_A_ENCUADERNADORES_(_.pdf",
+    "items": [
+      {
+        "NombreServicio": "CENA",
+        "TipoServicio": "NINGUNO",
+        "Alias": "CENA",
+        "Precio": 2889.0,
+        "Cantidad": 20,
+        "Subtotal": 57780.0
+      }
+    ]
+  },
+  {
+    "id": "20260619_125043_A_ENCUADERNADORES_(_",
+    "numero": "COT-2026-006",
+    "numero_int": 6,
+    "fecha_emision": "2026-06-19",
+    "vigencia": "2026-06-26",
+    "casino": "A ENCUADERNADORES ( ENCUADERNACION)",
+    "cliente": "A MAYER REFRIGERACION INDUSTRIAL S A",
+    "rut": "96889760-8",
+    "condicion_pago": "Anticipado",
+    "operador": "Fabián Flores",
+    "gerente_servicio": "Paulina Duran",
+    "jefe_servicio": "Henry Figueroa",
+    "n_servicios": 1,
+    "total_neto": 663200.0,
+    "iva": 126008.0,
+    "total": 789208.0,
+    "archivo": "data\\cotizaciones\\20260619_125043_A_ENCUADERNADORES_(_.xlsx",
+    "archivo_pdf": "data\\cotizaciones\\20260619_125043_A_ENCUADERNADORES_(_.pdf",
+    "items": [
+      {
+        "NombreServicio": "COLACION FRIA",
+        "TipoServicio": "NINGUNO",
+        "Alias": "COLACION FRIA",
+        "Precio": 3316.0,
+        "Cantidad": 200,
+        "Subtotal": 663200.0
+      }
+    ]
   }
 ]
