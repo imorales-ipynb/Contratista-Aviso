@@ -14,6 +14,7 @@ CONDICIONES_PAGO = ["Anticipado", "Tarjeta de Crédito", "Tarjeta de Débito",
                     "Crédito 30 días", "Crédito 60 días"]
 OPERADORES       = ["Fabián Flores", "Héctor Astudillo", "Wilson Prado", "Werner Marti"]
 LOGO_PATH        = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "logo.png")
+HEADER_PATH      = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "header.png")
 
 
 # ── Helpers Excel ─────────────────────────────────────────────────────────────
@@ -205,29 +206,34 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
                   condicion_pago, numero="", operador="",
                   gerente_servicio="", jefe_servicio=""):
     pdf = FPDF(orientation="P", unit="mm", format="A4")
-    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_auto_page_break(auto=True, margin=40)   # margen inferior reserva footer
     pdf.add_page()
     pdf.set_margins(15, 15, 15)
     W = 180
 
+    NEGRO   = (0, 0, 0)
+    BLANCO  = (255, 255, 255)
     AZUL    = (31, 78, 121)
-    AZUL_CL = (214, 228, 240)
     NARANJA = (197, 90, 17)
     GRIS_H  = (89, 89, 89)
     GRIS_F  = (242, 242, 242)
 
-    # ── Logo + Título ─────────────────────────────────────────────────────────
-    if os.path.exists(LOGO_PATH):
+    # ── Header (imagen completa ancho de página) ──────────────────────────────
+    if os.path.exists(HEADER_PATH):
+        pdf.image(HEADER_PATH, x=0, y=0, w=210)
+        pdf.set_y(45)
+    elif os.path.exists(LOGO_PATH):
         pdf.image(LOGO_PATH, x=15, y=8, w=52)
         pdf.set_y(40)
     else:
         pdf.set_y(15)
 
+    # ── Título ────────────────────────────────────────────────────────────────
     titulo = f"COTIZACION DE SERVICIOS   {numero}" if numero else "COTIZACION DE SERVICIOS"
-    pdf.set_font("Helvetica", "B", 15)
+    pdf.set_font("Helvetica", "B", 14)
     pdf.set_text_color(*AZUL)
     pdf.cell(W, 10, titulo, border=0, ln=1, align="C")
-    pdf.ln(5)
+    pdf.ln(3)
 
     # ── Info cliente / documento ──────────────────────────────────────────────
     def _tv(txt, n=30):
@@ -235,11 +241,11 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
         return txt[:n] + "..." if len(txt) > n else txt
 
     info_rows = [
-        ("N Cotizacion:", _tv(numero, 20),          "Emision:",        fecha.strftime("%d/%m/%Y")),
-        ("Cliente:",      _tv(cliente, 30),         "Vigencia:",       vigencia.strftime("%d/%m/%Y")),
-        ("RUT:",          _tv(rut, 20),             "Cond. Pago:",     _tv(condicion_pago, 20)),
-        ("Casino:",       _tv(casino, 28),          "Operador:",       _tv(operador, 22)),
-        ("Gte. Servicio:",_tv(gerente_servicio, 28),"Jefe Servicio:",  _tv(jefe_servicio, 28)),
+        ("N Cotizacion:", _tv(numero, 20),            "Emision:",       fecha.strftime("%d/%m/%Y")),
+        ("Cliente:",      _tv(cliente, 30),           "Vigencia:",      vigencia.strftime("%d/%m/%Y")),
+        ("RUT:",          _tv(rut, 20),               "Cond. Pago:",    _tv(condicion_pago, 20)),
+        ("Casino:",       _tv(casino, 28),            "Operador:",      _tv(operador, 22)),
+        ("Gte. Servicio:",_tv(gerente_servicio, 28),  "Jefe Servicio:", _tv(jefe_servicio, 28)),
     ]
     L, V = 26, 64
     H_ROW = 7
@@ -253,107 +259,121 @@ def _exportar_pdf(df_cot, casino, fecha, vigencia, cliente, rut,
         pdf.set_font("Helvetica", "", 9)
         pdf.cell(V, H_ROW, v2, ln=1)
         pdf.ln(1)
+    pdf.ln(4)
 
-    # Fila contacto completa
-    pdf.set_font("Helvetica", "B", 9); pdf.set_text_color(0, 0, 0)
-    pdf.cell(L, H_ROW, "Email / Tel:", ln=0)
-    pdf.set_font("Helvetica", "", 8); pdf.set_text_color(89, 89, 89)
-    pdf.cell(W - L, H_ROW, f"{EMAIL_EMPRESA}   |   Tel: {TELEFONOS}", ln=1)
-    pdf.ln(5)
-
-    # ── Encabezado tabla ──────────────────────────────────────────────────────
+    # ── Tabla servicios ───────────────────────────────────────────────────────
     HEADERS = ["N", "Servicio", "Codigo", "Precio Unit.", "Cant.", "Subtotal"]
     COL_W   = [8, 80, 22, 28, 14, 28]
     ALIGNS  = ["C", "L", "C", "R", "C", "R"]
 
-    pdf.set_fill_color(*AZUL); pdf.set_text_color(255, 255, 255)
+    pdf.set_fill_color(*AZUL); pdf.set_text_color(*BLANCO)
     pdf.set_font("Helvetica", "B", 9)
     for h, w, a in zip(HEADERS, COL_W, ALIGNS):
         pdf.cell(w, 8, h, border=1, ln=0, align=a, fill=True)
     pdf.ln()
 
-    # ── Filas de servicios ────────────────────────────────────────────────────
     neto = 0.0
     for idx, (_, row) in enumerate(df_cot.iterrows(), 1):
         subtotal = float(row.get("Cantidad", 0)) * float(row.get("Precio", 0))
         neto += subtotal
         fill = (idx % 2 == 0)
-        pdf.set_fill_color(*(GRIS_F if fill else (255, 255, 255)))
+        pdf.set_fill_color(*(GRIS_F if fill else BLANCO))
         pdf.set_text_color(0, 0, 0); pdf.set_font("Helvetica", "", 9)
         nombre = str(row.get("NombreServicio", ""))
         if len(nombre) > 55: nombre = nombre[:52] + "..."
         vals = [str(idx), nombre,
-                str(row.get("Codigo Servicio","")),
-                f"${float(row.get('Precio',0)):,.0f}",
-                str(int(row.get("Cantidad",0))), f"${subtotal:,.0f}"]
+                str(row.get("Codigo Servicio", "")),
+                f"${float(row.get('Precio', 0)):,.0f}",
+                str(int(row.get("Cantidad", 0))),
+                f"${subtotal:,.0f}"]
         for val, w, a in zip(vals, COL_W, ALIGNS):
             pdf.cell(w, 7, val, border=1, ln=0, align=a, fill=True)
         pdf.ln()
 
-    # ── Totales ───────────────────────────────────────────────────────────────
+    # ── Totales (negro/blanco, compactos, alineados a la derecha) ────────────
     iva   = neto * 0.19
     total = neto + iva
-    TW    = sum(COL_W[:-1])
+    TL, TV = 65, 30   # ancho etiqueta / ancho valor
 
-    def _total(label, valor, dest=False):
-        if dest:
-            pdf.set_fill_color(*AZUL_CL); pdf.set_text_color(*AZUL)
-            pdf.set_font("Helvetica", "B", 10)
-        else:
-            pdf.set_fill_color(235, 243, 251); pdf.set_text_color(0, 0, 0)
-            pdf.set_font("Helvetica", "", 9)
-        pdf.cell(TW, 7, label, border=1, ln=0, align="R", fill=True)
-        pdf.cell(COL_W[-1], 7, f"${valor:,.0f}", border=1, ln=1, align="R", fill=True)
+    def _total(label, valor):
+        pdf.set_x(pdf.l_margin + W - TL - TV)
+        pdf.set_fill_color(*NEGRO); pdf.set_text_color(*BLANCO)
+        pdf.set_font("Helvetica", "B", 9)
+        pdf.cell(TL, 7, label, border=1, ln=0, align="R", fill=True)
+        pdf.cell(TV, 7, f"${valor:,.0f}", border=1, ln=1, align="R", fill=True)
 
     _total("Total Neto", neto)
     _total("IVA (19%)", iva)
-    _total("TOTAL", total, dest=True)
+    _total("TOTAL", total)
+    pdf.ln(6)
 
-    # ── Pie al fondo de la página (posicionado absolutamente) ─────────────────
-    pdf.set_auto_page_break(False)
+    # ── Datos Transferencia + Instrucciones (cuadro sin separadores internos) ─
     xL = pdf.l_margin; xR = xL + 93; cw = 87
+    y0 = pdf.get_y()
 
-    # Vigencia: 3 líneas × 7mm = 21mm + margen inferior 15mm → y = 297-15-21 = 261
-    VIG_H   = 21
-    PIE_H   = 7 + 6 * 5.5   # header + 6 filas transferencia
-    GAP     = 4
-    pie_y   = 297 - 15 - VIG_H - GAP - PIE_H   # ≈ 214
-
-    # Datos de Transferencia + Instrucciones
-    pdf.set_xy(xL, pie_y)
-    y0 = pie_y
-    pdf.set_fill_color(*GRIS_H); pdf.set_text_color(255, 255, 255)
+    # Encabezados con relleno
+    pdf.set_fill_color(*GRIS_H); pdf.set_text_color(*BLANCO)
     pdf.set_font("Helvetica", "B", 9)
-    pdf.set_xy(xL, y0); pdf.cell(cw, 7, "Datos de Transferencia", border=1, ln=0, fill=True)
-    pdf.set_xy(xR, y0); pdf.cell(cw, 7, "Instrucciones de Pago",  border=1, ln=0, fill=True)
+    pdf.set_xy(xL, y0); pdf.cell(cw, 7, "Datos de Transferencia", border=0, ln=0, align="C", fill=True)
+    pdf.set_xy(xR, y0); pdf.cell(cw, 7, "Instrucciones de Pago",  border=0, ln=0, align="C", fill=True)
 
-    y1 = y0 + 7
-    transferencia = ["Banco: Chile", "Cuenta Corriente: 167-01052-02",
-                     "Rut: 78.793.360-2", "Casino Express S.A",
-                     f"Mail: {EMAIL_EMPRESA}",
-                     f"Tel: {TELEFONOS}"]
+    y1      = y0 + 7
+    ROW_H   = 5.5
+    transf  = ["Banco: Chile",
+               "Cuenta Corriente: 167-01052-02",
+               "Rut: 78.793.360-2",
+               "Casino Express S.A"]
+    instrs  = ["Para recibir servicios, pague con anticipacion:",
+               "- Transferencia: 24 hrs habiles.",
+               "- Getnet: 48 hrs habiles.",
+               "- Programe pagos para evitar suspension."]
+    n_rows  = max(len(transf), len(instrs))
+    block_h = n_rows * ROW_H
+
+    # Texto sin bordes individuales
     pdf.set_text_color(0, 0, 0); pdf.set_font("Helvetica", "", 8)
-    for i, linea in enumerate(transferencia):
-        pdf.set_xy(xL, y1 + i * 5.5); pdf.cell(cw, 5.5, linea, border=1)
+    for i, linea in enumerate(transf):
+        pdf.set_xy(xL + 2, y1 + i * ROW_H)
+        pdf.cell(cw - 2, ROW_H, linea, border=0)
 
-    instrucciones = ["Para recibir servicios, pague con anticipación:",
-                     "- Transferencia: 24 hrs hábiles.",
-                     "- Getnet: 48 hrs hábiles.",
-                     "- Programe pagos para evitar suspensión.", "", ""]
     pdf.set_text_color(*NARANJA); pdf.set_font("Helvetica", "", 8)
-    for i, inst in enumerate(instrucciones):
-        pdf.set_xy(xR, y1 + i * 5.5); pdf.cell(cw, 5.5, inst, border=1)
+    for i, inst in enumerate(instrs):
+        pdf.set_xy(xR + 2, y1 + i * ROW_H)
+        pdf.cell(cw - 2, ROW_H, inst, border=0)
 
-    # Vigencia al fondo
-    vig_y = 297 - 15 - VIG_H
-    pdf.set_xy(xL, vig_y)
-    pdf.set_fill_color(*NARANJA); pdf.set_text_color(255, 255, 255)
+    # Cuadros exteriores únicos
+    pdf.set_draw_color(150, 150, 150)
+    pdf.rect(xL, y0, cw, 7 + block_h)
+    pdf.rect(xR, y0, cw, 7 + block_h)
+    pdf.set_draw_color(0, 0, 0)
+
+    pdf.set_y(y0 + 7 + block_h + 5)
+
+    # ── Vigencia ──────────────────────────────────────────────────────────────
+    pdf.set_fill_color(*NARANJA); pdf.set_text_color(*BLANCO)
     pdf.set_font("Helvetica", "B", 10)
-    pdf.multi_cell(W, 7,
-        "IMPORTANTE: Los tickets comprados tienen una vigencia de 100 dias a contar de la fecha "
-        "de emision. Art. 41 Ley 19496. El prestador no efectuara devolucion de dinero por no "
-        "uso, salvo que el servicio no este disponible en los dias y horas en que se presta.",
+    pdf.multi_cell(W, 6.5,
+        "IMPORTANTE: Los tickets comprados tienen una vigencia de 100 dias a contar de la "
+        "fecha de emision. Art. 41 Ley 19496. El prestador no efectuara devolucion de dinero "
+        "por no uso, salvo que el servicio no este disponible en los dias y horas en que se presta.",
         border=0, align="L", fill=True)
+
+    # ── Footer (fijo al fondo) ────────────────────────────────────────────────
+    pdf.set_auto_page_break(False)
+    pdf.set_y(-22)
+    pdf.set_fill_color(*NEGRO); pdf.set_text_color(*BLANCO)
+    pdf.set_font("Helvetica", "B", 9)
+    pdf.cell(W, 7,
+             f"Atendido por: {operador or '-'}",
+             border=0, ln=1, align="L", fill=True)
+    pdf.set_font("Helvetica", "", 8)
+    pdf.set_x(pdf.l_margin)
+    pdf.cell(W / 2, 6,
+             f"Fono de Contacto: {TELEFONOS}",
+             border=0, ln=0, align="L", fill=True)
+    pdf.cell(W / 2, 6,
+             f"Mail de contacto: {EMAIL_EMPRESA}",
+             border=0, ln=1, align="L", fill=True)
 
     return bytes(pdf.output())
 
